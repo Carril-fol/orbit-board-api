@@ -38,18 +38,6 @@ class TaskRepository(BaseRepository[Task]):
         super().create(assignment)
         return assignment
 
-    def unassign_user(self, task_id: int, user_id: int):
-        stmt = select(TaskUser).where(
-            TaskUser.task_id == task_id,
-            TaskUser.user_id == user_id
-        )
-        result = self.db.execute(stmt).scalar_one_or_none()
-        if result:
-            self.db.delete(result)
-            self.db.commit()
-            return True
-        return False
-
     def get_tasks_from_project_from_user(self, user_id: int, project_id: int):
         stmt = select(self.model).join(TaskUser).where(
             TaskUser.user_id == user_id,
@@ -106,3 +94,11 @@ class TaskRepository(BaseRepository[Task]):
         )
         result = self.db.execute(stmt).scalars().all()
         return len(result)
+    
+    def get_task_user(self, task_id: int, user_id: int):
+        stmt = select(TaskUser).where(
+            TaskUser.task_id == task_id,
+            TaskUser.user_id == user_id
+        )
+
+        return self.db.execute(stmt).scalar_one_or_none()
