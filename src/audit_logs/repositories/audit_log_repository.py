@@ -3,4 +3,6 @@ from ..models.audit_log_model import AuditLog
 
 
 class AuditLogRepository(BaseRepository[AuditLog]):
-    pass
+    
+    def __init__(self, db):
+        super().__init__(AuditLog, db)
