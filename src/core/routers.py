@@ -8,6 +8,7 @@ from projects_tags.controllers.project_tag_controller import router as project_t
 from requests.controllers.requests_controller import router as requests_router
 from tasks.controllers.task_controller import router as tasks_router
 from comments.controllers.comment_controller import router as comments_router
+from tasks.controllers.task_user_controller import router as tasks_user_router
 
 def register_routers(app: FastAPI) -> None:
     app.include_router(auth_router)
@@ -18,3 +19,4 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(requests_router)
     app.include_router(tasks_router)
     app.include_router(comments_router)
+    app.include_router(tasks_user_router)

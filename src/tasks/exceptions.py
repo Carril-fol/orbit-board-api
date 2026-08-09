@@ -1,29 +1,33 @@
 class TaskNotFound(Exception):
-    def __init__(self, message="Task not found"):
-        self.message = message
-        
-        
+    def __init__(self):
+        super().__init__("Task not found")
+
+
 class TaskUserHasNotPermission(Exception):
-    def __init__(self, message="User does not have permission"):
-        self.message = message
-        
+    def __init__(self):
+        super().__init__("User does not have permission")
+
 
 class TaskUserIsNotAnCollaborator(Exception):
-    def __init__(self, message="User is not an collaborator"):
-        self.message = message
-        
-        
+    def __init__(self):
+        super().__init__("User is not a collaborator")
+
+
 class TaskCannotCompleted(Exception):
-    def __init__(self, message="Cannot complete task while subtasks are still open"):
-        self.message = message
-        
+    def __init__(self):
+        super().__init__("Cannot complete task while subtasks are still open")
+
 
 class TaskUserNotAssigned(Exception):
-    def __init__(self, message="User not assigned to task"):
-        self.message = message
-        
+    def __init__(self):
+        super().__init__("User not assigned to task")
+
 
 class TaskUserAlreadyStatusAssigned(Exception):
-    def __init__(self, message="The user already has this status assigned to the task"):
-        self.message = message
-        super().__init__(self.message)
+    def __init__(self):
+        super().__init__("The user already has this status assigned to the task")
+        
+        
+class TaskUserNotFound(Exception):
+    def __init__(self):
+        super().__init__("This register not exists")
