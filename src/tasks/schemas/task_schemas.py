@@ -3,7 +3,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from ..models.task_model import TaskPriority, TaskStatus
-from ..models.task_user_model import TaskUserStatus
 
 
 class TaskBaseSchema(BaseModel):
@@ -58,9 +57,3 @@ class TaskOutputSchema(BaseModel):
 
 class AssignUserTaskInputSchema(BaseModel):
     user_id: int = Field(..., description="The ID of the user to be assigned to the task")
-
-
-class UpdateTaskUserInputSchema(BaseModel):
-    user_id: int | None
-    task_id: int
-    status: TaskUserStatus
