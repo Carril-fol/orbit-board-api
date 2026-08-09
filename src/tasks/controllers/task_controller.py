@@ -110,8 +110,7 @@ async def update_task(
     payload: dict = Depends(jwt_required)
 ):
     user_id = payload["sub"]
-    a = service.update_task(task_id, data, user_id)
-    print(a)
+    service.update_task(task_id, data, user_id)
     return TaskOutputSchema(msg="Task updated")
 
 
@@ -128,7 +127,8 @@ async def assign_user_to_task(
     payload: dict = Depends(jwt_required)
 ):
     actor_user_id = payload["sub"]
-    service.assign_user_to_task(task_id, data.user_id, actor_user_id)
+    a = service.assign_user_to_task(task_id, data.user_id, actor_user_id)
+    print(a)
     return TaskOutputSchema(msg="User assigned to task")
 
 
