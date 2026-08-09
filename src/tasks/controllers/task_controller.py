@@ -4,14 +4,14 @@ from fastapi_cache.decorator import cache
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
 
-from ..dependencies import get_task_service
+from ..dependencies.task_dependencies import get_task_service
+
 from ..schemas.task_schemas import (
     RegisterTaskInputSchema,
     DetailTaskOutputSchema,
     ListDetailTaskOutputSchema,
     UpdateTaskInputSchema,
     TaskOutputSchema,
-    AssignUserTaskInputSchema
 )
 from ..services.task_service import TaskService
 
@@ -112,41 +112,6 @@ async def update_task(
     user_id = payload["sub"]
     service.update_task(task_id, data, user_id)
     return TaskOutputSchema(msg="Task updated")
-
-
-@router.post(
-    "/assign/{task_id}/",
-    response_model=TaskOutputSchema,
-    status_code=200,
-)
-async def assign_user_to_task(
-    request: Request,
-    task_id: int,
-    data: AssignUserTaskInputSchema,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
-):
-    actor_user_id = payload["sub"]
-    a = service.assign_user_to_task(task_id, data.user_id, actor_user_id)
-    print(a)
-    return TaskOutputSchema(msg="User assigned to task")
-
-
-@router.delete(
-    "/unassign/{task_id}/",
-    response_model=TaskOutputSchema,
-    status_code=200,
-)
-async def unassign_user_from_task(
-    request: Request,
-    task_id: int,
-    data: AssignUserTaskInputSchema,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
-):
-    actor_user_id = payload["sub"]
-    service.unassign_user_from_task(task_id, data.user_id, actor_user_id)
-    return TaskOutputSchema(msg="User unassigned from task")
 
 
 @router.get(
