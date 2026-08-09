@@ -7,8 +7,8 @@ from collaborators.repositories.collaborator_repository import CollaboratorRepos
 from audit_logs.repositories.audit_log_repository import AuditLogRepository
 from audit_logs.services.audit_log_service import AuditLogService
 
-from .repositories.task_repository import TaskRepository
-from .services.task_service import TaskService
+from ..repositories.task_repository import TaskRepository
+from ..services.task_service import TaskService
 
 def get_audit_log_repository(
     db: Session = Depends(get_database),
