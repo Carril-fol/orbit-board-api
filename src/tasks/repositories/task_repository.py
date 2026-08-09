@@ -25,18 +25,18 @@ class TaskRepository(BaseRepository[Task]):
 
         return self.db.execute(stmt).scalars().all()
 
-    def assign_user(self, task_id: int, user_id: int):
-        stmt = select(TaskUser).where(
-            TaskUser.task_id == task_id,
-            TaskUser.user_id == user_id
-        )
-        existing = self.db.execute(stmt).scalar_one_or_none()
-        if existing:
-            return existing
+    # def assign_user(self, task_id: int, user_id: int):
+    #     stmt = select(TaskUser).where(
+    #         TaskUser.task_id == task_id,
+    #         TaskUser.user_id == user_id
+    #     )
+    #     existing = self.db.execute(stmt).scalar_one_or_none()
+    #     if existing:
+    #         return existing
 
-        assignment = TaskUser(task_id=task_id, user_id=user_id)
-        super().create(assignment)
-        return assignment
+    #     assignment = TaskUser(task_id=task_id, user_id=user_id)
+    #     super().create(assignment)
+    #     return assignment
 
     def get_tasks_from_project_from_user(self, user_id: int, project_id: int):
         stmt = select(self.model).join(TaskUser).where(
@@ -94,11 +94,3 @@ class TaskRepository(BaseRepository[Task]):
         )
         result = self.db.execute(stmt).scalars().all()
         return len(result)
-    
-    def get_task_user(self, task_id: int, user_id: int):
-        stmt = select(TaskUser).where(
-            TaskUser.task_id == task_id,
-            TaskUser.user_id == user_id
-        )
-
-        return self.db.execute(stmt).scalar_one_or_none()
