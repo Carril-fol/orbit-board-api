@@ -33,8 +33,10 @@ from comments.exceptions import (
 from tasks.exceptions import (
     TaskNotFound,
     TaskUserHasNotPermission,
-    TaskUserIsNotAnCollaborator
+    TaskUserIsNotAnCollaborator,
+    TaskUserAlreadyStatusAssigned
 )
+
 
 # Handler exceptions rate limit exceeded
 def register_exception_handlers(app: FastAPI) -> None:
@@ -146,6 +148,10 @@ def register_tasks_exception_handlers(app):
     @app.exception_handler(TaskUserHasNotPermission)
     async def task_user_is_not_an_collaborator(request: Request, exc: TaskUserIsNotAnCollaborator):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
+    
+    @app.exception_handler(TaskUserAlreadyStatusAssigned)
+    async def task_user_already_has_status(request: Request, exc: TaskUserAlreadyStatusAssigned):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 def register_comments_exception_handlers(app):
