@@ -12,14 +12,12 @@ from ..schemas.task_schemas import (
     RegisterTaskInputSchema, 
     DetailTaskOutputSchema, 
     UpdateTaskInputSchema,
-    UpdateTaskUserInputSchema
 )
 from ..exceptions import (
     TaskNotFound,
     TaskUserHasNotPermission,
     TaskUserIsNotAnCollaborator,
-    TaskCannotCompleted,
-    TaskUserAlreadyStatusAssigned
+    TaskCannotCompleted
 )
 
 
@@ -159,58 +157,3 @@ class TaskService:
         tasks = self.repo.get_tasks_by_status(status.upper())
         return self._format_tasks(tasks)
     
-    def assign_user_to_task(self, task_id: int, target_user_id: int, actor_user_id: int):
-        task = self._get_task(task_id)
-        
-        actor_collab = self.collaborator_repo.get_collaborator_by_user_id_and_project_id(actor_user_id, task.project_id)
-        if not actor_collab or actor_collab.role != "OWNER":
-            raise TaskUserHasNotPermission()
-
-        target_collab = self.collaborator_repo.get_collaborator_by_user_id_and_project_id(target_user_id, task.project_id)
-        if not target_collab:
-            raise TaskUserIsNotAnCollaborator()
-        
-        self.repo.assign_user(task_id, target_user_id)
-
-        self.audit_log_service.record_diff(
-            user_id=actor_user_id,
-            entity_type="TaskUser",
-            entity_id=task_id,
-            action="assign_user",
-            old_state={
-                "user_id": None
-            },
-            new_state={
-                "user_id": target_user_id
-            }
-        )
-
-    def unassign_user_from_task(self, task_id: int, target_user_id: int, actor_user_id: int):
-        task = self._get_task(task_id)
-        
-        self._require_project_owner(task.project_id, actor_user_id)
-        
-        task_user = self.repo.get_task_user(task_id, target_user_id)
-            
-        if task_user.status == TaskUserStatus.UNASSIGNED:
-            raise TaskUserAlreadyStatusAssigned()
-            
-        task_user.status = TaskUserStatus.UNASSIGNED
-        task_user.updated_at = datetime.now(timezone.utc)
-
-        self.repo.update(task_user)
-
-        self.audit_log_service.record_diff(
-            user_id=actor_user_id,
-            entity_type="TaskUser",
-            entity_id=task_id,
-            action="unassign_user",
-            old_state={
-                "user_id": target_user_id,
-                "status": TaskUserStatus.ASSIGNED.value
-            },
-            new_state={
-                "user_id": target_user_id,
-                "status": TaskUserStatus.UNASSIGNED.value
-            }
-        )
