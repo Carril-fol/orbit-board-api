@@ -16,3 +16,14 @@ class TaskUserIsNotAnCollaborator(Exception):
 class TaskCannotCompleted(Exception):
     def __init__(self, message="Cannot complete task while subtasks are still open"):
         self.message = message
+        
+
+class TaskUserNotAssigned(Exception):
+    def __init__(self, message="User not assigned to task"):
+        self.message = message
+        
+
+class TaskUserAlreadyStatusAssigned(Exception):
+    def __init__(self, message="The user already has this status assigned to the task"):
+        self.message = message
+        super().__init__(self.message)
