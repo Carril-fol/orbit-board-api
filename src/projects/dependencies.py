@@ -1,15 +1,15 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from collaborators.dependencies import get_collaborators_repository
 from collaborators.services.collaborators_service import CollaboratorRepository
-from shared.database import get_database
+from shared.database import get_async_db
 
 from .repositories.project_repository import ProjectRepository
 from .services.project_service import ProjectService
 
 
-def get_project_repository(db: Session = Depends(get_database)) -> ProjectRepository:
+def get_project_repository(db: AsyncSession = Depends(get_async_db)) -> ProjectRepository:
     return ProjectRepository(db)
 
 

@@ -1,7 +1,7 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.database.database import get_database
+from shared.database import get_async_db
 
 from collaborators.repositories.collaborator_repository import CollaboratorRepository
 from projects.repositories.project_repository import ProjectRepository
@@ -11,24 +11,24 @@ from .repositories.comment_repository import CommentRepository
 from .services.comment_service import CommentService
 
 def get_projects_repository(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ):
     return ProjectRepository(db)
 
 
 def get_collaborators_repository(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ):
     return CollaboratorRepository(db)
 
 
 def get_tasks_repository(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ):
     return TaskRepository(db)
 
 def get_comments_repository(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ):
     return CommentRepository(db)
 
