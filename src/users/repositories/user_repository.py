@@ -1,21 +1,15 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from shared.database.base_repository import BaseRepository
 from ..models.user import User
 
-class UserRepository:
+class UserRepository(BaseRepository[User]):
 
-    def __init__(self, db: Session):
-        self.db = db
-
-    def create(self, user: User) -> User:
-        self.db.add(user)
-        self.db.flush()
-        return user
-
-    def get(self, id: int) -> User | None:
-        return self.db.get(User, id)
-
-    def list(self) -> list[User]:
-        return self.db.query(User).all()
+    def __init__(self, db: AsyncSession):
+        super().__init__(User, db)
     
-    def get_user_by_email(self, email: str) -> User | None:
-        return self.db.query(User).filter(User.email == email).first()
+    async def get_user_by_email(self, email: str) -> User | None:
+        stmt = select(User).filter(User.email == email)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
