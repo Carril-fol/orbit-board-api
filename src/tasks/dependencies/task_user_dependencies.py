@@ -1,7 +1,7 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.database.database import get_database
+from shared.database import get_async_db
 
 from collaborators.repositories.collaborator_repository import CollaboratorRepository
 from tasks.repositories.task_repository import TaskRepository
@@ -14,25 +14,25 @@ from ..services.task_user_service import TaskUserService
 
 
 def get_task_user_repo(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ) -> TaskUserRepository:
     return TaskUserRepository(db)
 
 
 def get_collaborator_repo(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ) -> CollaboratorRepository:
     return CollaboratorRepository(db)
 
 
 def get_task_repo(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ) -> TaskRepository:
     return TaskRepository(db)
 
 
 def get_audit_log_repo(
-    db: Session = Depends(get_database),
+    db: AsyncSession = Depends(get_async_db),
 ) -> AuditLogRepository:
     return AuditLogRepository(db)
 
