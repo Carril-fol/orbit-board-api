@@ -11,13 +11,47 @@ def password_strength_check(value: str) -> str:
 
 
 class RegisterInputSchema(BaseModel):
-    first_name: str
-    last_name: str
-    username: str
-    bio: str
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=15)
-    confirm_password: str = Field(min_length=8, max_length=15)
+    """
+    Schema for registering a new user.
+    """
+    first_name: str = Field(
+        ...,
+        description="User's first name.",
+        examples=["John"],
+    )
+    last_name: str = Field(
+        ...,
+        description="User's last name.",
+        examples=["Marston"],
+    )
+    username: str = Field(
+        ...,
+        description="Unique username used to identify the user.",
+        examples=["John123"],
+    )
+    email: EmailStr = Field(
+        ...,
+        description="User's email address.",
+        examples=["john.marston@gmail.com"],
+    )
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=15,
+        description=(
+            "User's password. Must be between 8 and 15 characters "
+            "and contain at least one special character."
+        ),
+        examples=["Supersecure123-"],
+    )
+
+    confirm_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=15,
+        description="Confirmation of the user's password.",
+        examples=["Supersecure123-"],
+    )
 
     @field_validator("password")
     @classmethod
@@ -32,8 +66,21 @@ class RegisterInputSchema(BaseModel):
 
 
 class LoginInputSchema(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=15)
+    """
+    Schema for authenticating an existing user.
+    """
+    email: EmailStr = Field(
+        ...,
+        description="Email address associated with the user account.",
+        examples=["example@gmail.com"],
+    )
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=15,
+        description="User's password.",
+        examples=["Supersecure123-"],
+    )
 
     @field_validator("password")
     @classmethod
@@ -42,27 +89,75 @@ class LoginInputSchema(BaseModel):
 
 
 class LoginOutputSchema(BaseModel):
-    access_token: str
-    refresh_token: str
+    """
+    Schema containing the authentication tokens returned after login.
+    """
+    access_token: str = Field(
+        ...,
+        description="Short-lived JWT access token used to authenticate API requests.",
+        examples=["eyJhbGciOiJIUzI1NiIs..."],
+    )
+    refresh_token: str = Field(
+        ...,
+        description="Long-lived JWT refresh token used to obtain a new access token.",
+        examples=["eyJhbGciOiJIUzI1NiIs..."],
+    )
 
 
 class UserCreateSchema(BaseModel):
-    first_name: str
-    last_name: str
-    username: str
-    bio: str
-    email: EmailStr
-    password: str
-    date_created: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    date_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    @field_validator("first_name", "last_name", "username", "bio", mode="before")
+    """
+    Schema used to create a new user in the database.
+    """
+    first_name: str = Field(
+        ...,
+        description="User's first name.",
+        examples=["John"],
+    )
+    last_name: str = Field(
+        ...,
+        description="User's last name.",
+        examples=["Marston"],
+    )
+    username: str = Field(
+        ...,
+        description="Unique username assigned to the user.",
+        examples=["John123"],
+    )
+    email: EmailStr = Field(
+        ...,
+        description="User's email address.",
+        examples=["john.marston@gmail.com"],
+    )
+    password: str = Field(
+        ...,
+        description="Hashed password stored for the user.",
+        examples=["$argon2id$v=19$m=65536,t=3,p=4$..."],
+    )
+    date_created: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="UTC timestamp indicating when the user was created.",
+    )
+    date_updated: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="UTC timestamp indicating when the user was last updated.",
+    )
+    
+    @field_validator("first_name", "last_name", "username", mode="before")
     @classmethod
-    def convert_to_uppercase(cls, value):
+    def convert_to_uppercase(cls, value: str) -> str:
         if isinstance(value, str):
             return value.upper()
+
         return value
 
 
 class AuthOutputSchema(BaseModel):
-    msg: str
+    """
+    Schema returned after a successful authentication operation.
+    """
+    
+    msg: str = Field(
+        ...,
+        description="Message describing the result of the authentication operation.",
+        examples=["Authentication successful"],
+    )

@@ -11,16 +11,34 @@ class RequestStatus(str, Enum):
 
 
 class RegisterRequestsInputSchema(BaseModel):
-    message: Optional[str]
-    role: str
+    """
+    Schema for submitting a project access request.
+    """
+    message: Optional[str] = Field(
+        None,
+        description="Optional message providing context or justification for the request.",
+        examples=["I would like to contribute to the frontend development."]
+    )
+    role: str = Field(
+        ...,
+        description="The role the user is requesting within the project.",
+        examples=["MEMBER"]
+    )
 
 
 class CreateRequestSchema(BaseModel):
-    message: Optional[str]
-    role: str
-    project_id: int
-    user_id: int
-    status: RequestStatus = Field(default=RequestStatus.PENDING)
+    """
+    Internal schema used to create an access request record in the database.
+    """
+    message: Optional[str] = Field(None, description="Optional message for the request.")
+    role: str = Field(..., description="The requested role.")
+    project_id: int = Field(..., description="The unique identifier of the project.", examples=[1])
+    user_id: int = Field(..., description="The unique identifier of the user making the request.", examples=[10])
+    status: RequestStatus = Field(
+        default=RequestStatus.PENDING,
+        description="The current status of the request.",
+        examples=[RequestStatus.PENDING]
+    )
 
     @field_validator("role")
     @classmethod
@@ -36,22 +54,42 @@ class CreateRequestSchema(BaseModel):
 
 
 class UpdateRequestSchema(BaseModel):
-    status: RequestStatus
+    """
+    Schema for updating the status of an access request.
+    """
+    status: RequestStatus = Field(
+        ...,
+        description="The new status to apply to the request.",
+        examples=[RequestStatus.APPROVED]
+    )
 
 
 class DetailRequestSchema(BaseModel):
+    """
+    Schema for detailed access request information.
+    """
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    message: Optional[str]
-    project_id: int
-    user_id: int
-    status: RequestStatus
+    id: int = Field(..., description="Unique identifier of the request.", examples=[1])
+    message: Optional[str] = Field(None, description="The message associated with the request.", examples=["I want to help."])
+    project_id: int = Field(..., description="The unique identifier of the project.", examples=[1])
+    user_id: int = Field(..., description="The unique identifier of the user.", examples=[10])
+    status: RequestStatus = Field(..., description="The current status of the request.", examples=[RequestStatus.PENDING])
 
 
 class ListDetailRequestSchema(BaseModel):
-    requests: list[DetailRequestSchema]
+    """
+    Schema for returning a list of access requests.
+    """
+    requests: list[DetailRequestSchema] = Field(..., description="List of request details.")
 
 
 class RequestOutputSchema(BaseModel):
-    msg: str
+    """
+    Schema returned after a request operation.
+    """
+    msg: str = Field(
+        ...,
+        description="Message describing the result of the request operation.",
+        examples=["Request submitted successfully"]
+    )

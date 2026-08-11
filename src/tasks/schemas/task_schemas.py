@@ -6,54 +6,79 @@ from ..models.task_model import TaskPriority, TaskStatus
 
 
 class TaskBaseSchema(BaseModel):
-    title: str = Field(..., description="The title of the task", example="Implement User Authentication")
-    description: Optional[str] = Field(None, description="Detailed description of the task requirements", example="Create JWT based auth system with refresh tokens")
-    status: TaskStatus = Field(..., description="The current state of the task (TO DO, IN PROGRESS, REVIEW, DONE)")
-    priority: TaskPriority = Field(..., description="Priority level of the task (LOW, MEDIUM, HIGH)")
+    """
+    Base schema for task-related data.
+    """
+    title: str = Field(..., description="The title of the task", examples=["Implement User Authentication"])
+    description: Optional[str] = Field(None, description="Detailed description of the task requirements", examples=["Create JWT based auth system with refresh tokens"])
+    status: TaskStatus = Field(..., description="The current state of the task (TO DO, IN PROGRESS, REVIEW, DONE)", examples=[TaskStatus.TO_DO])
+    priority: TaskPriority = Field(..., description="Priority level of the task (LOW, MEDIUM, HIGH)", examples=[TaskPriority.MEDIUM])
     expiration_date: Optional[datetime] = Field(None, description="Optional deadline for the task completion")
 
+
 class RegisterTaskInputSchema(TaskBaseSchema):
-    parent_id: Optional[int] = Field(None, description="The ID of the parent task if this is a subtask")
+    """
+    Schema for submitting a new task.
+    """
+    parent_id: Optional[int] = Field(None, description="The ID of the parent task if this is a subtask", examples=[10])
 
 
 class CreateTaskInputSchema(TaskBaseSchema):
-    project_id: int = Field(..., description="The ID of the project this task belongs to")
-    parent_id: Optional[int] = Field(None, description="The ID of the parent task for hierarchical structure")
+    """
+    Internal schema used to create a task record in the database.
+    """
+    project_id: int = Field(..., description="The ID of the project this task belongs to", examples=[1])
+    parent_id: Optional[int] = Field(None, description="The ID of the parent task for hierarchical structure", examples=[10])
 
 
 class UpdateTaskInputSchema(BaseModel):
-    title: Optional[str] = Field(None, description="Updated title of the task")
-    description: Optional[str] = Field(None, description="Updated description")
-    status: Optional[TaskStatus] = Field(None, description="New status of the task")
-    priority: Optional[TaskPriority] = Field(None, description="New priority level")
+    """
+    Schema for updating task details.
+    """
+    title: Optional[str] = Field(None, description="Updated title of the task", examples=["Implement User Authentication v2"])
+    description: Optional[str] = Field(None, description="Updated description", examples=["Updated requirements..."])
+    status: Optional[TaskStatus] = Field(None, description="New status of the task", examples=[TaskStatus.IN_PROGRESS])
+    priority: Optional[TaskPriority] = Field(None, description="New priority level", examples=[TaskPriority.HIGH])
     expiration_date: Optional[datetime] = Field(None, description="New expiration date")
-    parent_id: Optional[int] = Field(None, description="Change the parent task of this task")
+    parent_id: Optional[int] = Field(None, description="Change the parent task of this task", examples=[12])
 
 
 class DetailTaskOutputSchema(BaseModel):
-    id: int = Field(..., description="The unique identifier of the task")
-    title: str = Field(..., description="The title of the task")
-    description: Optional[str] = Field(None, description="Detailed description of the task")
-    status: TaskStatus = Field(..., description="The current state of the task")
-    priority: TaskPriority = Field(..., description="Priority level of the task")
+    """
+    Schema for detailed task information.
+    """
+    id: int = Field(..., description="The unique identifier of the task", examples=[1])
+    title: str = Field(..., description="The title of the task", examples=["Implement User Authentication"])
+    description: Optional[str] = Field(None, description="Detailed description of the task", examples=["Create JWT based auth system..."])
+    status: TaskStatus = Field(..., description="The current state of the task", examples=[TaskStatus.TO_DO])
+    priority: TaskPriority = Field(..., description="Priority level of the task", examples=[TaskPriority.MEDIUM])
     expiration_date: Optional[datetime] = Field(None, description="Deadline for the task")
-    project_id: int = Field(..., description="The ID of the project this task is associated with")
-    parent_id: Optional[int] = Field(None, description="The ID of the parent task, if applicable")
+    project_id: int = Field(..., description="The ID of the project this task is associated with", examples=[1])
+    parent_id: Optional[int] = Field(None, description="The ID of the parent task, if applicable", examples=[10])
     subtasks: list["DetailTaskOutputSchema"] = Field(default=[], description="List of nested subtasks for this task")
-    progress: float = Field(..., description="Automatic progress calculation based on completed subtasks (0-100%)")
-    deleted_at: Optional[datetime] = Field(None, description="Optional deadline for the task completion")
-    
+    progress: float = Field(..., description="Automatic progress calculation based on completed subtasks (0-100%)", examples=[45.5])
+    deleted_at: Optional[datetime] = Field(None, description="Timestamp when the task was deleted.")
+
     class Config:
         from_attributes = True
 
 
 class ListDetailTaskOutputSchema(BaseModel):
+    """
+    Schema for returning a list of tasks with their full details.
+    """
     tasks: list[DetailTaskOutputSchema] = Field(..., description="A list of tasks with their full details")
 
 
 class TaskOutputSchema(BaseModel):
-    msg: str = Field(..., description="Informational message about the operation result")
+    """
+    Schema returned after a task operation.
+    """
+    msg: str = Field(..., description="Informational message about the operation result", examples=["Task created successfully"])
 
 
 class AssignUserTaskInputSchema(BaseModel):
-    user_id: int = Field(..., description="The ID of the user to be assigned to the task")
+    """
+    Schema for assigning a user to a task.
+    """
+    user_id: int = Field(..., description="The ID of the user to be assigned to the task", examples=[10])

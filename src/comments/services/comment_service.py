@@ -54,7 +54,6 @@ class CommentService:
             raise CommentNotFound()
         return comment
 
-
     def create_comment(self, data: RegisterCommentInputSchema, user_id: int, task_id: int):
         project_id = self._get_task(task_id).project_id
         self._is_user_collaborator(user_id, project_id)
