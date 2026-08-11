@@ -1,26 +1,50 @@
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from datetime import datetime
-from collections.abc import Generator
+from typing import AsyncGenerator
 from enum import Enum
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 from ..config.settings import settings
 
-engine = create_engine(
-    settings.neon_database_url,
+
+def sanitize_url(url: str) -> str:
+    """
+    Converts 'sslmode' parameter to 'ssl' and removes incompatible parameters for asyncpg.
+    """
+    parsed = urlparse(url)
+    if not parsed.query:
+        return url
+
+    query_params = parse_qs(parsed.query)
+
+    if 'sslmode' in query_params:
+        query_params['ssl'] = query_params.pop('sslmode')
+
+    query_params.pop('channel_binding', None)
+
+    new_query = urlencode(query_params, doseq=True)
+    sanitized_parsed = parsed._replace(query=new_query)
+
+    return urlunparse(sanitized_parsed)
+
+
+engine = create_async_engine(
+    sanitize_url(settings.neon_database_url),
     pool_pre_ping=True,
     pool_recycle=300,
     pool_size=5,
-    max_overflow=10
+    max_overflow=10,
 )
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
+
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
+    class_=AsyncSession,
     expire_on_commit=False,
 )
+
 
 class Base(DeclarativeBase):
     
@@ -41,13 +65,6 @@ class Base(DeclarativeBase):
         return data
 
 
-
-def get_database() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
+        yield session
