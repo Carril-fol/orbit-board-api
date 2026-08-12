@@ -1,36 +1,30 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from shared.database.base_repository import BaseRepository
 from ..models.requests_model import Request
 
 
-class RequestsRepository:
-    def __init__(self, db: Session):
-        self.db = db
+class RequestsRepository(BaseRepository[Request]):
+    def __init__(self, db: AsyncSession):
+        super().__init__(Request, db)
 
-    def create(self, requests: Request) -> Request:
-        self.db.add(requests)
-        self.db.flush()
-        return requests
+    async def get_request_by_id(self, request_id: int) -> Request | None:
+        stmt = select(Request).where(Request.id == request_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def update(self, requests: Request) -> Request:
-        self.db.add(requests)
-        self.db.flush()
-        return requests
+    async def get_requests_by_project_id(self, project_id: int) -> list[Request]:
+        stmt = select(Request).where(Request.project_id == project_id)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    def get_request_by_id(self, request_id: int) -> Request | None:
-        request = self.db.query(Request).filter(Request.id == request_id).first()
-        return request
-
-    def get_requests_by_project_id(self, project_id: int) -> list[Request]:
-        requests = self.db.query(Request).filter(Request.project_id == project_id).all()
-        return requests
-
-    def get_request_by_user_id_and_project_id(
+    async def get_request_by_user_id_and_project_id(
         self, user_id: int, project_id: int
     ) -> Request | None:
-        request = (
-            self.db.query(Request)
-            .filter(Request.user_id == user_id, Request.project_id == project_id)
-            .first()
+        stmt = select(Request).where(
+            Request.user_id == user_id,
+            Request.project_id == project_id
         )
-        return request
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
