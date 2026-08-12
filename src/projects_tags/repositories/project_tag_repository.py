@@ -1,29 +1,18 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from shared.database.base_repository import BaseRepository
 from ..models.project_tag_model import ProjectTag
 
 
-class ProjectTagRepository:
-    def __init__(self, db: Session):
-        self.db = db
+class ProjectTagRepository(BaseRepository[ProjectTag]):
+    def __init__(self, db: AsyncSession):
+        super().__init__(ProjectTag, db)
 
-    def create(self, project_tag: ProjectTag) -> ProjectTag:
-        self.db.add(project_tag)
-        self.db.flush()
-        return project_tag
+    async def get_project_tag_by_id(self, id: int) -> ProjectTag | None:
+        stmt = select(ProjectTag).where(ProjectTag.id == id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def update(self, project_tag: ProjectTag) -> ProjectTag:
-        self.db.flush()
-        self.db.refresh(project_tag)
-        return project_tag
-
-    def delete_logic(self, project_tag: ProjectTag) -> ProjectTag:
-        return self.update(project_tag)
-
-    def get_project_tag_by_id(self, id: int) -> ProjectTag | None:
-        return self.db.query(ProjectTag).filter(ProjectTag.id == id).first()
-
-    def delete(self, project_tag: ProjectTag):
-        self.db.delete(project_tag)
-        self.db.flush()
-        return project_tag
+    async def delete_logic(self, project_tag: ProjectTag) -> ProjectTag:
+        return await self.update(project_tag)

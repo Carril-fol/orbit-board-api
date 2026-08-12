@@ -3,8 +3,10 @@ class ProjectTagNotFound(Exception):
 
 
 class ProjectTagNotAllowed(Exception):
-    pass
+    def __init__(self):
+        super().__init__("Only the project owner can perform this action")
 
 
 class ProjectNotFound(Exception):
-    pass
+    def __init__(self):
+        super().__init__("Project tag not found")
