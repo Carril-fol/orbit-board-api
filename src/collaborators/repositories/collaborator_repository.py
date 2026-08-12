@@ -1,3 +1,4 @@
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from users.models.user import User
@@ -8,18 +9,26 @@ from ..models.collaborators_model import Collaborators
 
 class CollaboratorRepository(BaseRepository[Collaborators]):
 
-    def __init__(self, db):
+    def __init__(self, db: AsyncSession):
         super().__init__(Collaborators, db)
 
-    def get_collaborators_from_project(self, id_project: int):
-        stmt = select(Collaborators).join(Collaborators.user).filter(User.id == Collaborators.id_user, Collaborators.id_project == id_project)
-        result = self.db.execute(stmt).scalars().fetchall()
-        return result
+    async def get_collaborators_from_project(self, id_project: int):
+        stmt = select(Collaborators).join(Collaborators.user).where(
+            User.id == Collaborators.id_user,
+            Collaborators.id_project == id_project
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    def get_collaborator_by_user_id(self, user_id: int):
+    async def get_collaborator_by_user_id(self, user_id: int):
         stmt = select(Collaborators).where(Collaborators.id_user == user_id)
-        return self.db.execute(stmt).scalar_one_or_none()
-    
-    def get_collaborator_by_user_id_and_project_id(self, user_id: int, id_project: int):
-        stmt = select(Collaborators).where(Collaborators.id_user == user_id, Collaborators.id_project == id_project)   
-        return self.db.execute(stmt).scalar_one_or_none()
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_collaborator_by_user_id_and_project_id(self, user_id: int, id_project: int):
+        stmt = select(Collaborators).where(
+            Collaborators.id_user == user_id,
+            Collaborators.id_project == id_project
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()

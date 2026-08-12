@@ -1,79 +1,82 @@
-from projects.exceptions.project_exception import (
-    ProjectInsufficientPrivileges,
-    ProjectNotFoundError,
-)
 from projects.repositories.project_repository import ProjectRepository
+from projects.models.project import Project
 
-from ..exceptions import CollaboratorNotAuthorized, CollaboratorNotFound
+from ..interfaces import ICollaboratorService
 from ..models.collaborators_model import Collaborators
 from ..repositories.collaborator_repository import CollaboratorRepository
 from ..schemas.collaborators_schema import (
-    CreateCollaboratorsSchema,
+    RegisterCollaboratorsInputSchema,
     DetailCollaboratorsSchema,
     ListDetailCollaboratorsSchema,
-    RegisterCollaboratorsInputSchema,
     UpdateCollaboratorsSchema
+)
+from ..exceptions import (
+    CollaboratorNotAuthorized, 
+    CollaboratorNotFound, 
+    CollaboratorProjectInsufficientPrivileges, 
+    CollaboratorProjectNotFoundError
 )
 
 
-class CollaboratorService:
+class CollaboratorService(ICollaboratorService):
     def __init__(
-        self, repository: CollaboratorRepository, project_repo: ProjectRepository
+        self,
+        repository: CollaboratorRepository,
+        project_repo: ProjectRepository
     ):
         self.repository = repository
         self.project_repo = project_repo
 
-    def _is_user_owner(self, user_id: int, project_id: int) -> bool:
-        project = self.project_repo.get_project_by_id(project_id)
-        if int(project.owner_id) == int(user_id):
-            raise ProjectInsufficientPrivileges("You are not the owner of this project")
+    async def _is_user_owner(self, user_id: int, project_id: int) -> bool:
+        project = await self.project_repo.get_project_by_id(project_id)
+        if not project:
+            raise CollaboratorProjectNotFoundError()
 
-    def create_collaborator(self, data: RegisterCollaboratorsInputSchema):
-        create_collaborator_schema = CreateCollaboratorsSchema(**data.model_dump())
-        collaborator_entity = Collaborators(**create_collaborator_schema.model_dump())
-        self.repository.create(collaborator_entity)
+        if int(project.owner_id) != int(user_id):
+            raise CollaboratorProjectInsufficientPrivileges()
 
-    def get_collaborators(self, id_project: int, user_id: int) -> ListDetailCollaboratorsSchema:
-        collaborators_raw = self.repository.get_collaborators_from_project(id_project)
-        collaborators = [
-            int(collaborator.id_user) for collaborator in collaborators_raw
-        ]
+        return True
 
-        if int(user_id) not in collaborators:
-            raise CollaboratorNotAuthorized(
-                "You are not a collaborator of this project"
-            )
+    async def add_member_to_project(self, id_user: int, id_project: int, role: str):
+        data = RegisterCollaboratorsInputSchema(role=role, id_user=id_user, id_project=id_project).model_dump()
+        collaborator_entity = Collaborators(**data)
+        await self.repository.create(collaborator_entity)
 
-        collaborators_list = [
-            DetailCollaboratorsSchema.model_validate(collaborator)
-            for collaborator in collaborators_raw
-        ]
+    async def get_collaborators(self, id_project: int, user_id: int) -> ListDetailCollaboratorsSchema:
+        collaborators_raw = await self.repository.get_collaborators_from_project(id_project)
+
+        user_ids: list[int] = [int(collaborator.id_user) for collaborator in collaborators_raw]
+
+        if int(user_id) not in user_ids:
+            raise CollaboratorNotAuthorized()
+
+        collaborators_list: list[DetailCollaboratorsSchema] = [DetailCollaboratorsSchema.model_validate(collaborator) for collaborator in collaborators_raw]
         return ListDetailCollaboratorsSchema(collaborators=collaborators_list)
 
-    def remove_collaborator(self, collaborator_id: int, user_id: int):
-        collaborator = self.repository.get_by_id(collaborator_id)
+    async def remove_collaborator(self, collaborator_id: int, user_id: int):
+        collaborator: Collaborators = await self.repository.get_by_id(collaborator_id)
         if not collaborator:
-            raise CollaboratorNotFound("Collaborator not founded")
-        
-        project = self.project_repo.get_project_by_id(collaborator.id_project)
-        if not project:
-            raise ProjectNotFoundError("Project not founded")
-        
-        self._is_user_owner(user_id, project.id)
-        self.repository.delete(collaborator)
+            raise CollaboratorNotFound()
 
-    def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int):
-        collaborator = self.repository.get_by_id(collaborator_id)
-        if not collaborator:
-            raise CollaboratorNotFound("Collaborator not founded")
-        
-        project = self.project_repo.get_project_by_id(collaborator.id_project)
+        project: Project = await self.project_repo.get_project_by_id(collaborator.id_project)
         if not project:
-            raise ProjectNotFoundError("Project not founded")
-        
-        self._is_user_owner(user_id, project.id)
+            raise CollaboratorProjectNotFoundError()
+
+        await self._is_user_owner(user_id, project.id)
+        await self.repository.delete(collaborator_id)
+
+    async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int):
+        collaborator = await self.repository.get_by_id(collaborator_id)
+        if not collaborator:
+            raise CollaboratorNotFound()
+
+        project = await self.project_repo.get_project_by_id(collaborator.id_project)
+        if not project:
+            raise CollaboratorProjectNotFoundError()
+
+        await self._is_user_owner(user_id, project.id)
 
         for key, value in data.model_dump().items():
             setattr(collaborator, key, value)
 
-        self.repository.update(collaborator)
+        await self.repository.update(collaborator)
