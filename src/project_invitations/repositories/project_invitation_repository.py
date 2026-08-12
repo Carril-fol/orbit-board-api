@@ -1,55 +1,38 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from shared.database.base_repository import BaseRepository
 from ..models.project_invitation_model import ProjectInvitation
 
 
-class ProjectInvitationRepository:
-    def __init__(self, db: Session):
-        self.db = db
+class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
+    def __init__(self, db: AsyncSession):
+        super().__init__(ProjectInvitation, db)
 
-    def create_project_invitation(self, project_invitation: ProjectInvitation):
-        self.db.add(project_invitation)
-        self.db.flush()
-        return project_invitation
-
-    def get_invite_by_project_id_and_invitee_id(self, project_id: int, invitee_id: int):
-        return (
-            self.db.query(ProjectInvitation)
-            .filter(
-                ProjectInvitation.id_project == project_id,
-                ProjectInvitation.id_invitee == invitee_id,
-            )
-            .first()
+    async def get_invite_by_project_id_and_invitee_id(self, project_id: int, invitee_id: int):
+        stmt = select(ProjectInvitation).where(
+            ProjectInvitation.id_project == project_id,
+            ProjectInvitation.id_invitee == invitee_id,
         )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_invite_by_id(self, id: int):
-        return (
-            self.db.query(ProjectInvitation).filter(ProjectInvitation.id == id).first()
-        )
+    async def get_invite_by_id(self, id: int):
+        stmt = select(ProjectInvitation).where(ProjectInvitation.id == id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def delete_project_invitation(self, project_invitation: ProjectInvitation):
-        self.db.delete(project_invitation)
-        self.db.flush()
+    async def get_by_token(self, token: str):
+        stmt = select(ProjectInvitation).where(ProjectInvitation.token == token)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_token(self, token: str):
-        return (
-            self.db.query(ProjectInvitation)
-            .filter(ProjectInvitation.token == token)
-            .first()
-        )
-
-    def get_project_invitation_by_project_id_and_user_id(
+    async def get_project_invitation_by_project_id_and_user_id(
         self, project_id: int, user_id: int
     ):
-        return (
-            self.db.query(ProjectInvitation)
-            .filter(
-                ProjectInvitation.id_project == project_id,
-                ProjectInvitation.id_invitee == user_id,
-            )
-            .all()
+        stmt = select(ProjectInvitation).where(
+            ProjectInvitation.id_project == project_id,
+            ProjectInvitation.id_invitee == user_id,
         )
-
-    def update_project_invitation(self, project_invitation: ProjectInvitation):
-        self.db.merge(project_invitation)
-        self.db.flush()
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
