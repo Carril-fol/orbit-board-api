@@ -20,10 +20,6 @@ from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
 #     RequestNotFound,
 #     UserAlreadyIsInvited,
 # )
-# from requests.exceptions import (
-#     ProjectNotFoundError as ProjectNotFoundRequests,
-# )
-
 from comments.exceptions import (
     CommentNotFound,
     CommentTaskNotFound,
