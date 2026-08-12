@@ -12,7 +12,7 @@ from ..services.project_tag_service import ProjectTagService
 
 router = APIRouter(
     prefix="/projects-tags/api/v1",
-    tags=["projects-tags"],
+    tags=["Projects tags"],
     dependencies=[Depends(jwt_required)],
 )
 

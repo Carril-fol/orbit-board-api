@@ -13,7 +13,7 @@ from ..services.project_invitations_service import ProjectInvitationService
 
 router = APIRouter(
     prefix="/invitations/api/v1",
-    tags=["invitations"],
+    tags=["Invitations"],
     dependencies=[Depends(jwt_required)],
 )
 

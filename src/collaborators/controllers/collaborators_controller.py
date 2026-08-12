@@ -12,7 +12,7 @@ from ..schemas.collaborators_schema import (
 )
 from ..services.collaborators_service import CollaboratorService
 
-router = APIRouter(prefix="/collaborators/api/v1", tags=["collaborators"])
+router = APIRouter(prefix="/collaborators/api/v1", tags=["Collaborators"])
 
 
 @router.get(

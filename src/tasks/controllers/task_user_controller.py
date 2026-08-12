@@ -10,7 +10,7 @@ from ..services.task_user_service import TaskUserService
 
 router = APIRouter(
     prefix="/tasks/api/v1",
-    tags=["task-users"],
+    tags=["Task Users"],
 )
 
 

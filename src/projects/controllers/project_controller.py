@@ -18,7 +18,7 @@ from ..services.project_service import ProjectService
 
 router = APIRouter(
     prefix="/projects/api/v1",
-    tags=["projects"],
+    tags=["Projects"],
     dependencies=[
         Depends(jwt_required),
     ],
