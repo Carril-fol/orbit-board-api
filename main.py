@@ -6,7 +6,8 @@ from core.exception_handlers import (
     register_invitation_exception_handlers,
     register_project_exception_handlers,
     register_comments_exception_handlers,
-    register_tasks_exception_handlers
+    register_tasks_exception_handlers,
+    register_auth_exception_handlers
 )
 from core.lifespan import lifespan
 from core.routers import register_routers
@@ -14,7 +15,16 @@ from shared.extensions import limiter
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(
+        title="Orbit Board API",
+        description="Orbit Board is a project management API designed to create workspaces, publish them to attract collaborators or invite specific individuals, and manage workflows through a system of hierarchical tasks and comments.",
+        contact={
+            "name": "Folco Carril",
+            "url": "https://folcocarril.dev"
+        },
+        lifespan=lifespan,
+        docs_url="/docs"
+    )
     app.state.limiter = limiter
 
     register_project_exception_handlers(app)
@@ -22,6 +32,7 @@ def create_app() -> FastAPI:
     register_comments_exception_handlers(app)
     register_tasks_exception_handlers(app)
     register_exception_handlers(app)
+    register_auth_exception_handlers(app)
 
     register_routers(app)
     return app
