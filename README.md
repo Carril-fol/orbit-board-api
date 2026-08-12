@@ -32,7 +32,7 @@ Follow this steps to configure the project locally
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/tu-usuario/orbit-board-api.git
+   git clone https://github.com/carril-fol/orbit-board-api.git
    cd orbit-board-api
    ```
 
