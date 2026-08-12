@@ -10,35 +10,25 @@ from tasks.repositories.task_repository import TaskRepository
 from .repositories.comment_repository import CommentRepository
 from .services.comment_service import CommentService
 
-def get_projects_repository(
-    db: AsyncSession = Depends(get_async_db),
-):
+def get_projects_repository(db: AsyncSession = Depends(get_async_db)) -> ProjectRepository:
     return ProjectRepository(db)
 
 
-def get_collaborators_repository(
-    db: AsyncSession = Depends(get_async_db),
-):
+def get_collaborators_repository(db: AsyncSession = Depends(get_async_db)) -> CollaboratorRepository:
     return CollaboratorRepository(db)
 
 
-def get_tasks_repository(
-    db: AsyncSession = Depends(get_async_db),
-):
+def get_tasks_repository(db: AsyncSession = Depends(get_async_db)) -> TaskRepository:
     return TaskRepository(db)
 
-def get_comments_repository(
-    db: AsyncSession = Depends(get_async_db),
-):
+
+def get_comments_repository(db: AsyncSession = Depends(get_async_db)) -> CommentRepository:
     return CommentRepository(db)
+
 
 def get_comments_service(
     repo: CommentRepository = Depends(get_comments_repository),
     collaborator_repo: CollaboratorRepository = Depends(get_collaborators_repository),
-    task_repo: TaskRepository = Depends(get_tasks_repository),
-):
-    return CommentService(
-        repo,
-        collaborator_repo,
-        task_repo,
-    )
+    task_repo: TaskRepository = Depends(get_tasks_repository)
+) -> CommentService:
+    return CommentService(repo, collaborator_repo, task_repo)

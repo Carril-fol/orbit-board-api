@@ -14,7 +14,7 @@ from ..schemas.comment_schema import (
     UpdateCommentSchema
 )
 
-router = APIRouter(prefix="/comments/api/v1", tags=["comments"])
+router = APIRouter(prefix="/comments/api/v1", tags=["Comments"])
 
 
 @router.post(
@@ -28,10 +28,10 @@ async def create_comment(
     data: RegisterCommentInputSchema,
     task_id: int,
     service: CommentService = Depends(get_comments_service),
-    payload: dict = Depends(jwt_required)
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.create_comment(data, user_id, task_id)
+    user_id = _payload["sub"]
+    await service.create_comment(data, user_id, task_id)
     return CommentOutputSchema(msg="Comment created")
 
 
@@ -45,10 +45,10 @@ async def get_comment(
     request: Request,
     comment_id: int,
     service: CommentService = Depends(get_comments_service),
-    payload: dict = Depends(jwt_required)
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    comment = service.get_comment_by_id(comment_id, user_id)
+    user_id = _payload["sub"]
+    comment = await service.get_comment_by_id(comment_id, user_id)
     return comment
 
 
@@ -65,10 +65,10 @@ async def get_comment_from_tasks(
     limit: int = 20,
     offset: int = 0,
     service: CommentService = Depends(get_comments_service),
-    payload: dict = Depends(jwt_required)
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    comments = service.get_comments_by_task_id(task_id, user_id, limit, offset)
+    user_id = _payload["sub"]
+    comments = await service.get_comments_by_task_id(task_id, user_id, limit, offset)
     return comments
 
 
@@ -78,15 +78,15 @@ async def get_comment_from_tasks(
     status_code=200
 )
 @limiter.limit("10/minute")
-def update_comment(
+async def update_comment(
     request: Request,
     data: UpdateCommentSchema,
     comment_id: int,
     service: CommentService = Depends(get_comments_service),
-    payload: dict = Depends(jwt_required)
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.update_comment(data, user_id, comment_id)
+    user_id = _payload["sub"]
+    await service.update_comment(data, user_id, comment_id)
     return CommentOutputSchema(msg="Comment updated")
 
 
@@ -96,12 +96,12 @@ def update_comment(
     status_code=200
 )
 @limiter.limit("10/minute")
-def delete_comment(
+async def delete_comment(
     request: Request,
     comment_id: int,
     service: CommentService = Depends(get_comments_service),
-    payload: dict = Depends(jwt_required)
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.delete_comment(comment_id, user_id)
+    user_id = _payload["sub"]
+    await service.delete_comment(comment_id, user_id)
     return CommentOutputSchema(msg="Comment deleted")
