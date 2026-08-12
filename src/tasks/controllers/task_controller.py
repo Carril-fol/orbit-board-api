@@ -15,13 +15,15 @@ from ..schemas.task_schemas import (
 )
 from ..services.task_service import TaskService
 
-router = APIRouter(prefix="/tasks/api/v1", tags=["tasks"])
+router = APIRouter(prefix="/tasks/api/v1", tags=["Tasks"])
 
 
 @router.post(
     "/create/{project_id}",
     response_model=TaskOutputSchema,
     status_code=201,
+    summary="Create a new task",
+    description="Create a new task v"
 )
 @limiter.limit("10/minute")
 async def create_task(
