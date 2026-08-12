@@ -1,32 +1,27 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
+from shared.database.base_repository import BaseRepository
 from ..models.project import Project
 
 
-class ProjectRepository:
-    def __init__(self, db: Session):
-        self.db = db
+class ProjectRepository(BaseRepository[Project]):
+    def __init__(self, db: AsyncSession):
+        super().__init__(Project, db)
 
-    def create(self, project: Project) -> Project:
-        self.db.add(project)
-        self.db.flush()
-        return project
+    async def get_project_by_id(self, id: int) -> Project | None:
+        stmt = select(Project).where(Project.id == id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_project_by_id(self, id: int) -> Project | None:
-        return self.db.query(Project).filter(Project.id == id).first()
+    async def get_all_project(self, per_page: int, page: int) -> tuple[list[Project], int]:
+        count_stmt = select(func.count()).select_from(self.model)
+        total_result = await self.db.execute(count_stmt)
+        total = total_result.scalar()
 
-    def update(self, project: Project) -> Project:
-        self.db.flush()
-        self.db.refresh(project)
-        return project
+        stmt = select(self.model).offset((page - 1) * per_page).limit(per_page)
 
-    def delete_logic(self, project: Project) -> Project:
-        return self.update(project)
-
-    def get_all_project(self, per_page: int, page: int) -> tuple[list[Project], int]:
-        query = self.db.query(Project)
-
-        total = query.count()
-        projects = query.offset((page - 1) * per_page).limit(per_page).all()
+        result = await self.db.execute(stmt)
+        projects = result.scalars().all()
 
         return projects, total
