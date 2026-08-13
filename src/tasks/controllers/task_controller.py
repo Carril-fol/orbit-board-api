@@ -4,7 +4,8 @@ from fastapi_cache.decorator import cache
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
 
-from ..dependencies.task_dependencies import get_task_service
+from ..dependencies import get_task_service
+from ..interfaces import ITaskService
 
 from ..schemas.task_schemas import (
     RegisterTaskInputSchema,
@@ -13,7 +14,6 @@ from ..schemas.task_schemas import (
     UpdateTaskInputSchema,
     TaskOutputSchema,
 )
-from ..services.task_service import TaskService
 
 router = APIRouter(prefix="/tasks/api/v1", tags=["Tasks"])
 
@@ -30,11 +30,11 @@ async def create_task(
     request: Request,
     data: RegisterTaskInputSchema,
     project_id: int,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.create(data, user_id, project_id)
+    user_id = _payload["sub"]
+    await service.create(data, user_id, project_id)
     return TaskOutputSchema(msg="Task created")
 
 
@@ -48,11 +48,11 @@ async def create_task(
 async def get_task(
     request: Request,
     task_id: int,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    task = service.get_task_by_id(task_id, user_id)
+    user_id = _payload["sub"]
+    task = await service.get_task_by_id(task_id, user_id)
     return task
 
 
@@ -69,11 +69,11 @@ async def get_tasks(
     status: str = None,
     priority: str = None,
     user_id: int = None,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    current_user_id = payload["sub"]
-    tasks = service.get_tasks_by_project(
+    current_user_id = _payload["sub"]
+    tasks = await service.get_tasks_by_project(
         current_user_id,
         project_id,
         status,
@@ -91,11 +91,11 @@ async def get_tasks(
 async def delete_task(
     request: Request,
     task_id: int,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.delete_task(task_id, user_id)
+    user_id = _payload["sub"]
+    await service.delete_task(task_id, user_id)
     return TaskOutputSchema(msg="Task deleted")
 
 
@@ -108,11 +108,11 @@ async def update_task(
     request: Request,
     task_id: int,
     data: UpdateTaskInputSchema,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    user_id = payload["sub"]
-    service.update_task(task_id, data, user_id)
+    user_id = _payload["sub"]
+    await service.update_task(task_id, data, user_id)
     return TaskOutputSchema(msg="Task updated")
 
 
@@ -126,9 +126,9 @@ async def update_task(
 async def get_tasks_by_title_or_description(
     request: Request,
     search_term: str,
-    service: TaskService = Depends(get_task_service),
-    payload: dict = Depends(jwt_required)
+    service: ITaskService = Depends(get_task_service),
+    _payload: dict = Depends(jwt_required)
 ):
-    tasks = service.get_tasks_by_title_or_description(search_term)
+    tasks = await service.get_tasks_by_title_or_description(search_term)
     return tasks
 
