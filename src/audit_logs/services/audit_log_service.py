@@ -1,13 +1,14 @@
+from ..interfaces import IAuditLogService
 from ..repositories.audit_log_repository import AuditLogRepository
 from ..models.audit_log_model import AuditLog
 
 
-class AuditLogService:
-    
+class AuditLogService(IAuditLogService):
+
     def __init__(self, repo: AuditLogRepository):
         self.repo = repo
         
-    def record_diff(
+    async def record_diff(
         self,
         user_id: int,
         entity_type: str,
@@ -15,7 +16,7 @@ class AuditLogService:
         action: str,
         old_state: dict,
         new_state: dict
-    ):
+    ) -> AuditLog | None:
         diff_old = {}
         diff_new = {}
 
@@ -36,4 +37,4 @@ class AuditLogService:
             new_value=diff_new
         )
 
-        return self.repo.create(audit_entry)
+        return await self.repo.create(audit_entry)
