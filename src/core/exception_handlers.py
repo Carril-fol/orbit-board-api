@@ -20,6 +20,11 @@ from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
 #     RequestNotFound,
 #     UserAlreadyIsInvited,
 # )
+from collaborators.exceptions import (
+    CollaboratorNotAuthorized,
+    CollaboratorNotFound,
+    CollaboratorProjectInsufficientPrivileges,
+)
 from comments.exceptions import (
     CommentNotFound,
     CommentTaskNotFound,
@@ -152,6 +157,23 @@ def register_tasks_exception_handlers(app):
     @app.exception_handler(TaskUserAlreadyStatusAssigned)
     async def task_user_already_has_status(request: Request, exc: TaskUserAlreadyStatusAssigned):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+def register_collaborators_exception_handlers(app):
+
+    @app.exception_handler(CollaboratorNotFound)
+    async def collaborator_not_found_handler(request: Request, exc: CollaboratorNotFound):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @app.exception_handler(CollaboratorNotAuthorized)
+    async def collaborator_not_authorized_handler(request: Request, exc: CollaboratorNotAuthorized):
+        return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+    @app.exception_handler(CollaboratorProjectInsufficientPrivileges)
+    async def collaborator_insufficient_privileges_handler(
+        request: Request, exc: CollaboratorProjectInsufficientPrivileges
+    ):
+        return JSONResponse(status_code=403, content={"detail": str(exc)})
 
 
 def register_comments_exception_handlers(app):
