@@ -4,7 +4,7 @@ from fastapi_cache.decorator import cache
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
 
-from ..services.comment_service import CommentService
+from ..interfaces import ICommentService
 from ..dependencies import get_comments_service
 from ..schemas.comment_schema import (
     RegisterCommentInputSchema,
@@ -27,7 +27,7 @@ async def create_comment(
     request: Request,
     data: RegisterCommentInputSchema,
     task_id: int,
-    service: CommentService = Depends(get_comments_service),
+    service: ICommentService = Depends(get_comments_service),
     _payload: dict = Depends(jwt_required)
 ):
     user_id = _payload["sub"]
@@ -44,7 +44,7 @@ async def create_comment(
 async def get_comment(
     request: Request,
     comment_id: int,
-    service: CommentService = Depends(get_comments_service),
+    service: ICommentService = Depends(get_comments_service),
     _payload: dict = Depends(jwt_required)
 ):
     user_id = _payload["sub"]
@@ -64,7 +64,7 @@ async def get_comment_from_tasks(
     task_id: int,
     limit: int = 20,
     offset: int = 0,
-    service: CommentService = Depends(get_comments_service),
+    service: ICommentService = Depends(get_comments_service),
     _payload: dict = Depends(jwt_required)
 ):
     user_id = _payload["sub"]
@@ -82,7 +82,7 @@ async def update_comment(
     request: Request,
     data: UpdateCommentSchema,
     comment_id: int,
-    service: CommentService = Depends(get_comments_service),
+    service: ICommentService = Depends(get_comments_service),
     _payload: dict = Depends(jwt_required)
 ):
     user_id = _payload["sub"]
@@ -99,7 +99,7 @@ async def update_comment(
 async def delete_comment(
     request: Request,
     comment_id: int,
-    service: CommentService = Depends(get_comments_service),
+    service: ICommentService = Depends(get_comments_service),
     _payload: dict = Depends(jwt_required)
 ):
     user_id = _payload["sub"]

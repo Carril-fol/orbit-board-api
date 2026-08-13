@@ -1,7 +1,7 @@
-from tasks.models.task_model import Task
-from tasks.repositories.task_repository import TaskRepository
-from collaborators.repositories.collaborator_repository import CollaboratorRepository
+from tasks.interfaces import ITaskService
+from collaborators.interfaces import ICollaboratorService
 
+from ..interfaces import ICommentService
 from ..models.comment_model import Comment
 from ..repositories.comment_repository import CommentRepository
 from ..schemas.comment_schema import (
@@ -12,23 +12,21 @@ from ..schemas.comment_schema import (
     UpdateCommentSchema
 )
 from ..exceptions import (
-    CommentUserIsNotFromProject,
     CommentNotFound,
     CommentUserHasNoPrivileges,
-    CommentTaskNotFound,
 )
 
-class CommentService:
+class CommentService(ICommentService):
     
     def __init__(
         self, 
-        comment_repository: CommentRepository, 
-        collaborator_repository: CollaboratorRepository,
-        task_repo: TaskRepository
+        comment_repository: CommentRepository,
+        collaborator_service: ICollaboratorService,
+        task_service: ITaskService
     ):
         self.comment_repository = comment_repository
-        self.collaborator_repository = collaborator_repository
-        self.task_repository = task_repo
+        self.collaborator_service = collaborator_service
+        self.task_service = task_service
 
     def _format_comments(self, comments: list[Comment]) -> ListDetailCommentOutputSchema:
         comments_formatted = [
@@ -37,19 +35,6 @@ class CommentService:
         ]
         return ListDetailCommentOutputSchema(comments=comments_formatted)
 
-    async def _is_user_collaborator(self, user_id: int, project_id: int):
-        collaborator = await self.collaborator_repository.get_collaborator_by_user_id_and_project_id(user_id, project_id)
-        if not collaborator:
-            raise CommentUserIsNotFromProject()
-        
-        return True
-
-    async def _get_task(self, task_id: int) -> Task:
-        task = await self.task_repository.get_by_id(task_id)
-        if not task:
-            raise CommentTaskNotFound()
-        return task
-    
     async def _get_comment(self, comment_id: int) -> Comment:
         comment = await self.comment_repository.get_by_id(comment_id)
         if not comment:
@@ -57,8 +42,8 @@ class CommentService:
         return comment
 
     async def create_comment(self, data: RegisterCommentInputSchema, user_id: int, task_id: int) -> None:
-        project_id = await self._get_task(task_id).project_id
-        await self._is_user_collaborator(user_id, project_id)
+        task = await self.task_service.get_task_or_raise(task_id)
+        await self.collaborator_service.require_project_member(user_id, task.project_id)
         
         create_comment_input = CreateCommentSchema.model_validate({
             **data.model_dump(),
@@ -75,8 +60,8 @@ class CommentService:
         if comment.user_id != user_id:
             raise CommentUserHasNoPrivileges()
 
-        task = await self.task_repository.get_by_id(comment.task_id)
-        await self._is_user_collaborator(user_id, task.project_id)
+        task = await self.task_service.get_task_or_raise(comment.task_id)
+        await self.collaborator_service.require_project_member(user_id, task.project_id)
 
         for key, value in data.model_dump().items():
             setattr(comment, key, value)
@@ -89,8 +74,8 @@ class CommentService:
         if comment.user_id != user_id:
             raise CommentUserHasNoPrivileges()
         
-        task = await self.task_repository.get_by_id(comment.task_id)
-        await self._is_user_collaborator(user_id, task.project_id)
+        task = await self.task_service.get_task_or_raise(comment.task_id)
+        await self.collaborator_service.require_project_member(user_id, task.project_id)
 
         await self.comment_repository.delete(comment.id)
         
@@ -113,7 +98,7 @@ class CommentService:
     async def get_comment_by_id(self, comment_id: int, user_id: int) -> DetailCommentOutputSchema:
         comment = await self._get_comment(comment_id)
         
-        task = await self.task_repository.get_by_id(comment.task_id)
-        await self._is_user_collaborator(user_id, task.project_id)
+        task = await self.task_service.get_task_or_raise(comment.task_id)
+        await self.collaborator_service.require_project_member(user_id, task.project_id)
         
         return DetailCommentOutputSchema.model_validate(comment).model_dump()

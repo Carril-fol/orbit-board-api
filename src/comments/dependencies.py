@@ -3,23 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.database import get_async_db
 
-from collaborators.repositories.collaborator_repository import CollaboratorRepository
-from projects.repositories.project_repository import ProjectRepository
-from tasks.repositories.task_repository import TaskRepository
+from collaborators.dependencies import get_collaborators_service
+from collaborators.interfaces import ICollaboratorService
+from tasks.dependencies import get_task_service
+from tasks.interfaces import ITaskService
 
+from .interfaces import ICommentService
 from .repositories.comment_repository import CommentRepository
 from .services.comment_service import CommentService
-
-def get_projects_repository(db: AsyncSession = Depends(get_async_db)) -> ProjectRepository:
-    return ProjectRepository(db)
-
-
-def get_collaborators_repository(db: AsyncSession = Depends(get_async_db)) -> CollaboratorRepository:
-    return CollaboratorRepository(db)
-
-
-def get_tasks_repository(db: AsyncSession = Depends(get_async_db)) -> TaskRepository:
-    return TaskRepository(db)
 
 
 def get_comments_repository(db: AsyncSession = Depends(get_async_db)) -> CommentRepository:
@@ -28,7 +19,7 @@ def get_comments_repository(db: AsyncSession = Depends(get_async_db)) -> Comment
 
 def get_comments_service(
     repo: CommentRepository = Depends(get_comments_repository),
-    collaborator_repo: CollaboratorRepository = Depends(get_collaborators_repository),
-    task_repo: TaskRepository = Depends(get_tasks_repository)
-) -> CommentService:
-    return CommentService(repo, collaborator_repo, task_repo)
+    collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
+    task_service: ITaskService = Depends(get_task_service)
+) -> ICommentService:
+    return CommentService(repo, collaborator_service, task_service)
