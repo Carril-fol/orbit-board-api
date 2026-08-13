@@ -1,9 +1,7 @@
 from secrets import token_urlsafe
 
-from collaborators.models.collaborators_model import Collaborators
-from collaborators.repositories.collaborator_repository import CollaboratorRepository
-from collaborators.schemas.collaborators_schema import RegisterCollaboratorsInputSchema
-from projects.repositories.project_repository import ProjectRepository
+from collaborators.interfaces import ICollaboratorService
+from projects.interfaces import IProjectService
 
 from ..exceptions.project_invitation_exceptions import (
     InvitationAlreadyExistsError,
@@ -12,36 +10,40 @@ from ..exceptions.project_invitation_exceptions import (
 from ..models.project_invitation_model import InvitationStatus, ProjectInvitation
 from ..repositories.project_invitation_repository import ProjectInvitationRepository
 from ..schemas.project_invitations_schemas import CreateProjectInvitation
+from ..interfaces import IProjectInvitationService
 
 
-class ProjectInvitationService:
+class ProjectInvitationService(IProjectInvitationService):
     def __init__(
         self,
         repository: ProjectInvitationRepository,
-        project_repo: ProjectRepository,
-        collaborator_repo: CollaboratorRepository,
+        project_service: IProjectService,
+        collaborator_service: ICollaboratorService,
     ):
         self.repository = repository
-        self.project_repo = project_repo
-        self.collaborator_repo = collaborator_repo
+        self.project_service = project_service
+        self.collaborator_service = collaborator_service
 
-    def _get_invite_already_exists_or_none(self, project_id: int, invitee_id: int):
-        invite = self.repository.get_invite_by_project_id_and_invitee_id(
+    async def get_invitation_by_project_and_user(self, project_id: int, user_id: int):
+        return await self.repository.get_project_invitation_by_project_id_and_user_id(
+            project_id, user_id
+        )
+
+    async def _get_invite_already_exists_or_none(self, project_id: int, invitee_id: int):
+        invite = await self.repository.get_invite_by_project_id_and_invitee_id(
             project_id, invitee_id
         )
         return invite
 
-    def create_project_invitation(
+    async def create_project_invitation(
         self,
         data: CreateProjectInvitation,
         inviter_id: int,
     ):
-        project = self.project_repo.get_project_by_id(data.id_project)
-        if project is None:
-            raise ValueError("Project not found.")
+        project = await self.project_service.get_project_by_id(data.id_project)
 
-        collaborators_from_project = len(
-            self.collaborator_repo.get_collaborators_from_project(data.id_project)
+        collaborators_from_project = await self.collaborator_service.count_project_collaborators(
+            data.id_project
         )
 
         if project.max_collaborators <= 0:
@@ -53,7 +55,7 @@ class ProjectInvitationService:
                 "You do not have permission to invite users to this project."
             )
 
-        invite = self._get_invite_already_exists_or_none(
+        invite = await self._get_invite_already_exists_or_none(
             data.id_project, data.id_invitee
         )
         if invite and (
@@ -66,24 +68,24 @@ class ProjectInvitationService:
         project_invitation_instance = ProjectInvitation(
             **data.model_dump(), id_inviter=inviter_id, token=token
         )
-        self.repository.create_project_invitation(project_invitation_instance)
+        await self.repository.create_project_invitation(project_invitation_instance)
         return token
 
-    def remove_project_invitation(self, id_invite: int, user_id: int):
-        invite = self.repository.get_invite_by_id(id_invite)
+    async def remove_project_invitation(self, id_invite: int, user_id: int):
+        invite = await self.repository.get_invite_by_id(id_invite)
         if not invite:
             raise InvitationNotFoundError("Invite not found.")
         if int(invite.id_inviter) != int(user_id):
             raise PermissionError("You do not have permission to remove this invite.")
-        self.repository.delete_project_invitation(invite)
+        await self.repository.delete_project_invitation(invite)
 
-    def respond_project_invitation(
+    async def respond_project_invitation(
         self,
         token: str,
         user_id: int,
         accepted: bool,
     ):
-        invite = self.repository.get_by_token(token)
+        invite = await self.repository.get_by_token(token)
         if not invite:
             raise InvitationNotFoundError("Invitation not found.")
         if int(invite.id_invitee) != int(user_id):
@@ -98,15 +100,13 @@ class ProjectInvitationService:
             raise Exception("Invitation has already been responded.")
 
         if accepted and invite.status == InvitationStatus.PENDING:
-            data = RegisterCollaboratorsInputSchema(
-                role=invite.role,
-                id_project=invite.id_project,
+            await self.collaborator_service.add_member_to_project(
                 id_user=user_id,
+                id_project=invite.id_project,
+                role=invite.role,
             )
-            collaborator_entity = Collaborators(**data.dict())
-            self.collaborator_repo.create_collaborator(collaborator_entity)
 
         invite.status = (
             InvitationStatus.ACCEPTED if accepted else InvitationStatus.REJECTED
         )
-        self.repository.update_project_invitation(invite)
+        await self.repository.update_project_invitation(invite)
