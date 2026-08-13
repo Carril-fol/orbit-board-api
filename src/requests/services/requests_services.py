@@ -1,6 +1,6 @@
 from collaborators.interfaces import ICollaboratorService
-from project_invitations.repositories.project_invitation_repository import ProjectInvitationRepository
-from projects.repositories.project_repository import ProjectRepository
+from project_invitations.interfaces import IProjectInvitationService
+from projects.interfaces import IProjectService
 from projects.models.project import Project
 
 from ..models.requests_model import Request
@@ -13,43 +13,36 @@ from ..schemas.requests_schemas import (
 )
 from ..exceptions import (
     RequestCollaboratorAlreadyExists,
-    RequestProjectNotFoundError,
     RequestAlreadyExists,
     RequestAlreadyRespondedError,
     RequestNotFound,
     RequestUserAlreadyIsInvited
 )
+from ..interfaces import IRequestsService
 
 
-class RequestsService:
+class RequestsService(IRequestsService):
     def __init__(
         self,
         requests_repository: RequestsRepository,
-        project_repository: ProjectRepository,
-        project_invitations_repo: ProjectInvitationRepository,
+        project_service: IProjectService,
+        project_invitation_service: IProjectInvitationService,
         collaborator_service: ICollaboratorService
     ):
         self.requests_repository = requests_repository
-        self.project_repository = project_repository
-        self.project_invitations_repo = project_invitations_repo
+        self.project_service = project_service
+        self.project_invitation_service = project_invitation_service
         self.collaborator_service = collaborator_service
 
     def _ensure_is_owner(self, project: Project, user_id: int) -> None:
         if project.owner_id != int(user_id):
             raise PermissionError("Only the project owner can perform this action")
 
-    async def _get_project_or_raise(self, project_id: int) -> Project:
-        project = await self.project_repository.get_project_by_id(project_id)
-        if not project:
-            raise RequestProjectNotFoundError()
-        
-        return project
-
     async def _validate_if_exists(self, user_id: int, project_id: int) -> None:
         request = await self.requests_repository.get_request_by_user_id_and_project_id(user_id, project_id)
         if request:
             raise RequestAlreadyExists()
-    
+
     async def create_request(
         self,
         data: RegisterRequestsInputSchema,
@@ -58,22 +51,22 @@ class RequestsService:
     ) -> None:
         await self._validate_if_exists(user_id, project_id)
 
-        project_invitations = await self.project_invitations_repo.get_project_invitation_by_project_id_and_user_id(project_id, user_id)
+        project_invitations = await self.project_invitation_service.get_invitation_by_project_and_user(project_id, user_id)
         if project_invitations:
             raise RequestUserAlreadyIsInvited()
 
-        project = await self._get_project_or_raise(project_id)
+        project = await self.project_service.get_project_by_id(project_id)
 
         user_exists = await self.collaborator_service.get_collaborator_by_user_id_and_project_id(user_id, project_id)
         if user_exists:
             raise RequestCollaboratorAlreadyExists()
 
         create_request = CreateRequestSchema(
-            **data.model_dump(), 
-            user_id=user_id, 
+            **data.model_dump(),
+            user_id=user_id,
             project_id=project.id
         )
-        
+
         request = Request(**create_request.model_dump())
         await self.requests_repository.create(request)
 
@@ -85,7 +78,7 @@ class RequestsService:
         if request.status != RequestStatus.PENDING:
             raise RequestAlreadyRespondedError()
 
-        project = await self._get_project_or_raise(request.project_id)
+        project = await self.project_service.get_project_by_id(request.project_id)
 
         self._ensure_is_owner(project, user_id)
 
@@ -102,7 +95,7 @@ class RequestsService:
         await self.requests_repository.update(request)
 
     async def get_all_requests(self, project_id: int, user_id: int) -> list[DetailRequestSchema]:
-        project = await self._get_project_or_raise(project_id)
+        project = await self.project_service.get_project_by_id(project_id)
 
         self._ensure_is_owner(project, user_id)
 
@@ -114,7 +107,7 @@ class RequestsService:
         if not request:
             raise RequestNotFound()
 
-        project = await self._get_project_or_raise(request.project_id)
+        project = await self.project_service.get_project_by_id(request.project_id)
 
         self._ensure_is_owner(project, user_id)
 

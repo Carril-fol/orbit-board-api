@@ -4,7 +4,7 @@ from fastapi_cache.decorator import cache
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
 
-from ..services.requests_services import RequestsService
+from ..interfaces import IRequestsService
 from ..dependencies import get_requests_service
 from ..schemas.requests_schemas import (
     DetailRequestSchema,
@@ -30,7 +30,7 @@ async def create(
     request: Request,
     data: RegisterRequestsInputSchema,
     project_id: int,
-    service: RequestsService = Depends(get_requests_service),
+    service: IRequestsService = Depends(get_requests_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
@@ -47,7 +47,7 @@ async def create(
 async def approve(
     request: Request,
     request_id: int,
-    service: RequestsService = Depends(get_requests_service),
+    service: IRequestsService = Depends(get_requests_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
@@ -64,7 +64,7 @@ async def approve(
 async def decline(
     request: Request,
     request_id: int,
-    service: RequestsService = Depends(get_requests_service),
+    service: IRequestsService = Depends(get_requests_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
@@ -81,7 +81,7 @@ async def decline(
 async def get_all(
     request: Request,
     project_id: int,
-    service: RequestsService = Depends(get_requests_service),
+    service: IRequestsService = Depends(get_requests_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
@@ -99,7 +99,7 @@ async def get_all(
 async def get_request(
     request: Request,
     request_id: int,
-    service: RequestsService = Depends(get_requests_service),
+    service: IRequestsService = Depends(get_requests_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
