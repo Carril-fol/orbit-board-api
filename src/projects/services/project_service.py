@@ -1,4 +1,5 @@
 from collaborators.interfaces import ICollaboratorService
+from ..interfaces import IProjectService
 
 from ..exceptions.project_exception import (
     ProjectAlreadyHasStatus,
@@ -17,13 +18,16 @@ from ..schemas.project_schema import (
 )
 
 
-class ProjectService:
+class ProjectService(IProjectService):
     def __init__(
-        self, project_repo: ProjectRepository, 
+        self, project_repo: ProjectRepository,
         collaborator_service: ICollaboratorService
     ):
         self.project_repo = project_repo
         self.collaborator_service = collaborator_service
+
+    async def get_project_by_id(self, id: int) -> Project:
+        return await self._get_project_by_id_or_raise(id)
 
     async def _get_project_by_id_or_raise(self, id: int) -> Project:
         project = await self.project_repo.get_project_by_id(id)
@@ -33,7 +37,7 @@ class ProjectService:
 
     async def create_project(self, data: RegisterProjectInputSchema, user_id: int):
         project_to_created = ProjectCreateSchema(
-            **data.model_dump(), 
+            **data.model_dump(),
             owner_id=user_id
         )
 
@@ -53,12 +57,12 @@ class ProjectService:
             raise ProjectInsufficientPrivileges()
 
         project_update = ProjectUpdateSchema(
-            **data.model_dump(exclude_unset=True), 
+            **data.model_dump(exclude_unset=True),
             owner_id=user_id
         )
 
         update_fields = project_update.model_dump(
-            exclude_unset=True, 
+            exclude_unset=True,
             exclude={"owner_id"}
         )
 

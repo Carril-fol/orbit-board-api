@@ -5,6 +5,7 @@ from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
 
 from ..dependencies import get_project_service
+from ..interfaces import IProjectService
 from ..schemas.project_schema import (
     DeleteProjectOutputSchema,
     ListProjectDetail,
@@ -14,7 +15,6 @@ from ..schemas.project_schema import (
     UpdateProjectInputSchema,
     UpdateProjectOutputSchema,
 )
-from ..services.project_service import ProjectService
 
 router = APIRouter(
     prefix="/projects/api/v1",
@@ -27,14 +27,14 @@ router = APIRouter(
 
 @router.post("/create", response_model=RegisterProjectOutputSchema, status_code=201)
 @limiter.limit("5/minute")
-def create_project(
+async def create_project(
     request: Request,
     data: RegisterProjectInputSchema,
-    service: ProjectService = Depends(get_project_service),
-    payload: dict = Depends(jwt_required),
+    service: IProjectService = Depends(get_project_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
-    service.create_project(data, user_id)
+    user_id = _payload["sub"]
+    await service.create_project(data, user_id)
     return RegisterProjectOutputSchema(msg="Project created successfully")
 
 
@@ -44,24 +44,24 @@ def create_project(
 async def get_project(
     request: Request,
     id: int,
-    service: ProjectService = Depends(get_project_service),
-    payload: dict = Depends(jwt_required),
+    service: IProjectService = Depends(get_project_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    project = service.detail_project_by_id(id)
+    project = await service.detail_project_by_id(id)
     return project
 
 
 @router.patch("/update/{id}", response_model=UpdateProjectOutputSchema, status_code=200)
 @limiter.limit("5/minute")
-def update_project(
+async def update_project(
     request: Request,
     id: int,
     data: UpdateProjectInputSchema,
-    service: ProjectService = Depends(get_project_service),
-    payload: dict = Depends(jwt_required),
+    service: IProjectService = Depends(get_project_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
-    service.update_project(id, data, user_id)
+    user_id = _payload["sub"]
+    await service.update_project(id, data, user_id)
     return UpdateProjectOutputSchema(msg="Project updated")
 
 
@@ -69,15 +69,15 @@ def update_project(
     "/delete/{id}", response_model=DeleteProjectOutputSchema, status_code=200
 )
 @limiter.limit("5/minute")
-def delete_project(
+async def delete_project(
     request: Request,
     id: int,
-    service: ProjectService = Depends(get_project_service),
-    payload: dict = Depends(jwt_required),
+    service: IProjectService = Depends(get_project_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
+    user_id = _payload["sub"]
     data = {"status": "CANCELLED"}
-    service.delete_project(id, user_id, data)
+    await service.delete_project(id, user_id, data)
     return DeleteProjectOutputSchema(msg="Project deleted successfully")
 
 
@@ -88,8 +88,8 @@ async def get_all_project(
     request: Request,
     per_page: int = 10,
     page: int = 1,
-    service: ProjectService = Depends(get_project_service),
+    service: IProjectService = Depends(get_project_service),
     payload: dict = Depends(jwt_required),
 ):
-    list_detailed_projects = service.get_all_project(per_page, page)
+    list_detailed_projects = await service.get_all_project(per_page, page)
     return list_detailed_projects

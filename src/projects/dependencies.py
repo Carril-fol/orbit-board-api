@@ -11,7 +11,9 @@ from .services.project_service import ProjectService
 from .interfaces import IProjectService
 
 
-def get_project_repository(db: AsyncSession = Depends(get_async_db)) -> ProjectRepository:
+def get_project_repository(
+    db: AsyncSession = Depends(get_async_db)
+) -> ProjectRepository:
     return ProjectRepository(db)
 
 
