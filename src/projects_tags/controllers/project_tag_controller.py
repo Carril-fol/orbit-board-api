@@ -8,7 +8,7 @@ from ..schemas.project_tag_schema import (
     ProjectTagOutputSchema,
     RegisterProjectTagInputSchema,
 )
-from ..services.project_tag_service import ProjectTagService
+from ..interfaces import IProjectTagService
 
 router = APIRouter(
     prefix="/projects-tags/api/v1",
@@ -23,15 +23,15 @@ router = APIRouter(
     status_code=201,
 )
 @limiter.limit("10/minute")
-def create_project_tag(
+async def create_project_tag(
     request: Request,
     project_id: int,
     data: RegisterProjectTagInputSchema,
-    service: ProjectTagService = Depends(get_project_tag_service),
+    service: IProjectTagService = Depends(get_project_tag_service),
     payload: dict = Depends(jwt_required),
 ):
     user_id = payload["sub"]
-    service.create_project_tag(project_id, data, user_id)
+    await service.create_project_tag(project_id, data, user_id)
     return ProjectTagOutputSchema(msg="Project tag created")
 
 
@@ -41,12 +41,12 @@ def create_project_tag(
     status_code=200,
 )
 @limiter.limit("10/minute")
-def delete_project_tag(
+async def delete_project_tag(
     request: Request,
     id_tag: int,
-    service: ProjectTagService = Depends(get_project_tag_service),
+    service: IProjectTagService = Depends(get_project_tag_service),
     payload: dict = Depends(jwt_required),
 ):
     user_id = payload["sub"]
-    service.delete_tag_from_project(id_tag, user_id)
+    await service.delete_tag_from_project(id_tag, user_id)
     return ProjectTagOutputSchema(msg="Project tag deleted")
