@@ -21,7 +21,7 @@ class BaseRepository(Generic[T]):
     async def delete(self, id: int) -> bool:
         obj = await self.get_by_id(id)
         if obj:
-            self.db.delete(obj)
+            await self.db.delete(obj)
             await self.db.commit()
             return True
         return False
