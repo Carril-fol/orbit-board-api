@@ -1,20 +1,16 @@
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security.password_manager import PasswordManager
-from shared.database import get_async_db
 
-from users.repositories.user_repository import UserRepository
+from users.dependencies import get_user_service
+from users.interfaces import IUserService
 
+from .interfaces import IAuthService
 from .services.auth_services import AuthService
 
 
-def get_user_repository(db: AsyncSession = Depends(get_async_db)) -> UserRepository:
-    return UserRepository(db)
-
-
 def get_auth_service(
-    user_repo: UserRepository = Depends(get_user_repository),
+    user_service: IUserService = Depends(get_user_service),
     password_manager: PasswordManager = Depends()
-):
-    return AuthService(user_repo, password_manager)
+) -> IAuthService:
+    return AuthService(user_service, password_manager)

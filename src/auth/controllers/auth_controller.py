@@ -10,7 +10,7 @@ from ..schemas.auth_schema import (
     LoginOutputSchema,
     RegisterInputSchema,
 )
-from ..services.auth_services import AuthService
+from ..interfaces import IAuthService
 
 router = APIRouter(prefix="/auth/api/v1", tags=["Auth"])
 
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/auth/api/v1", tags=["Auth"])
 async def register(
     request: Request,
     data: RegisterInputSchema,
-    service: AuthService = Depends(get_auth_service),
+    service: IAuthService = Depends(get_auth_service),
 ):
     await service.register_user(data)
     return AuthOutputSchema(msg="Register successfully")
@@ -40,7 +40,7 @@ async def login(
     request: Request,
     data: LoginInputSchema,
     response: Response,
-    service: AuthService = Depends(get_auth_service),
+    service: IAuthService = Depends(get_auth_service),
     jwt_manager: JwtManager = Depends(),
 ):
     user_id = await service.authenticate(data)
