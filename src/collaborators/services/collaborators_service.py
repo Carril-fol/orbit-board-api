@@ -1,6 +1,3 @@
-from projects.repositories.project_repository import ProjectRepository
-from projects.models.project import Project
-
 from ..interfaces import ICollaboratorService
 from ..models.collaborators_model import Collaborators
 from ..repositories.collaborator_repository import CollaboratorRepository
@@ -11,33 +8,33 @@ from ..schemas.collaborators_schema import (
     UpdateCollaboratorsSchema
 )
 from ..exceptions import (
-    CollaboratorNotAuthorized, 
-    CollaboratorNotFound, 
-    CollaboratorProjectInsufficientPrivileges, 
-    CollaboratorProjectNotFoundError
+    CollaboratorNotAuthorized,
+    CollaboratorNotFound,
+    CollaboratorProjectInsufficientPrivileges
 )
 
 
 class CollaboratorService(ICollaboratorService):
-    def __init__(
-        self,
-        repository: CollaboratorRepository,
-        project_repo: ProjectRepository
-    ):
+    def __init__(self, repository: CollaboratorRepository):
         self.repository = repository
-        self.project_repo = project_repo
+        
+    async def count_project_collaborators(self, project_id: int) -> int:
+        collaborators = await self.repository.get_collaborators_from_project(project_id)
+        return len(collaborators)
 
-    async def _is_user_owner(self, user_id: int, project_id: int) -> bool:
-        project = await self.project_repo.get_project_by_id(project_id)
-        if not project:
-            raise CollaboratorProjectNotFoundError()
+    async def require_project_member(self, user_id: int, project_id: int) -> Collaborators:
+        collaborator = await self.repository.get_collaborator_by_user_id_and_project_id(user_id, project_id)
+        if not collaborator:
+            raise CollaboratorNotAuthorized()
+        return collaborator
 
-        if int(project.owner_id) != int(user_id):
+    async def require_project_owner(self, user_id: int, project_id: int) -> Collaborators:
+        collaborator = await self.require_project_member(user_id, project_id)
+        if collaborator.role != "OWNER":
             raise CollaboratorProjectInsufficientPrivileges()
+        return collaborator
 
-        return True
-
-    async def add_member_to_project(self, id_user: int, id_project: int, role: str):
+    async def add_member_to_project(self, id_user: int, id_project: int, role: str) -> Collaborators:
         data = RegisterCollaboratorsInputSchema(role=role, id_user=id_user, id_project=id_project).model_dump()
         collaborator_entity = Collaborators(**data)
         await self.repository.create(collaborator_entity)
@@ -58,25 +55,20 @@ class CollaboratorService(ICollaboratorService):
         if not collaborator:
             raise CollaboratorNotFound()
 
-        project: Project = await self.project_repo.get_project_by_id(collaborator.id_project)
-        if not project:
-            raise CollaboratorProjectNotFoundError()
-
-        await self._is_user_owner(user_id, project.id)
+        await self.require_project_owner(user_id, collaborator.id_project)
         await self.repository.delete(collaborator_id)
 
-    async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int):
+    async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int) -> Collaborators:
         collaborator = await self.repository.get_by_id(collaborator_id)
         if not collaborator:
             raise CollaboratorNotFound()
 
-        project = await self.project_repo.get_project_by_id(collaborator.id_project)
-        if not project:
-            raise CollaboratorProjectNotFoundError()
-
-        await self._is_user_owner(user_id, project.id)
+        await self.require_project_owner(user_id, collaborator.id_project)
 
         for key, value in data.model_dump().items():
             setattr(collaborator, key, value)
 
         await self.repository.update(collaborator)
+
+    async def get_collaborator_by_user_id_and_project_id(self, user_id: int, project_id: int) -> Collaborators | None:
+        return await self.repository.get_collaborator_by_user_id_and_project_id(user_id, project_id)

@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from users.models.user import User
 from shared.database.base_repository import BaseRepository
@@ -13,9 +14,14 @@ class CollaboratorRepository(BaseRepository[Collaborators]):
         super().__init__(Collaborators, db)
 
     async def get_collaborators_from_project(self, id_project: int):
-        stmt = select(Collaborators).join(Collaborators.user).where(
-            User.id == Collaborators.id_user,
-            Collaborators.id_project == id_project
+        stmt = (
+            select(Collaborators)
+            .join(Collaborators.user)
+            .where(
+                User.id == Collaborators.id_user,
+                Collaborators.id_project == id_project
+            )
+            .options(selectinload(Collaborators.user))
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()

@@ -10,7 +10,7 @@ from ..schemas.collaborators_schema import (
     ListDetailCollaboratorsSchema,
     UpdateCollaboratorsSchema,
 )
-from ..services.collaborators_service import CollaboratorService
+from ..interfaces import ICollaboratorService
 
 router = APIRouter(prefix="/collaborators/api/v1", tags=["Collaborators"])
 
@@ -22,14 +22,14 @@ router = APIRouter(prefix="/collaborators/api/v1", tags=["Collaborators"])
 )
 @cache(expire=30)
 @limiter.limit("10/minute")
-def get_collaborators(
+async def get_collaborators(
     request: Request,
     project_id: int,
-    service: CollaboratorService = Depends(get_collaborators_service),
-    payload: dict = Depends(jwt_required),
+    service: ICollaboratorService = Depends(get_collaborators_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
-    return service.get_collaborators(project_id, user_id)
+    user_id = _payload["sub"]
+    return await service.get_collaborators(project_id, user_id)
 
 
 @router.delete(
@@ -38,15 +38,15 @@ def get_collaborators(
     status_code=200,
 )
 @limiter.limit("10/minute")
-def remove_collaborator(
+async def remove_collaborator(
     request: Request,
     id_collaborator: int,
-    service: CollaboratorService = Depends(get_collaborators_service),
-    payload: dict = Depends(jwt_required),
+    service: ICollaboratorService = Depends(get_collaborators_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
+    user_id = _payload["sub"]
 
-    service.remove_collaborator(id_collaborator, user_id)
+    await service.remove_collaborator(id_collaborator, user_id)
     return CollaboratorsOutputSchema(msg="Collaborator removed")
 
 
@@ -56,13 +56,13 @@ def remove_collaborator(
     status_code=200,
 )
 @limiter.limit("10/minute")
-def change_role_collaborator(
+async def change_role_collaborator(
     request: Request,
     collaborator_id: int,
     data: UpdateCollaboratorsSchema,
-    service: CollaboratorService = Depends(get_collaborators_service),
-    payload: dict = Depends(jwt_required),
+    service: ICollaboratorService = Depends(get_collaborators_service),
+    _payload: dict = Depends(jwt_required),
 ):
-    user_id = payload["sub"]
-    service.change_role_collaborator(collaborator_id, data, user_id)
+    user_id = _payload["sub"]
+    await service.change_role_collaborator(collaborator_id, data, user_id)
     return CollaboratorsOutputSchema(msg="Collaborator updated")
