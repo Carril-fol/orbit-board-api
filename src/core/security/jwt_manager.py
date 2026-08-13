@@ -52,6 +52,11 @@ class JwtManager:
         if payload.get("type") != type_wanted:
             raise HTTPException(status_code=401, detail=f"Invalid {type_wanted} token")
 
+        try:
+            payload["sub"] = int(payload["sub"])
+        except (KeyError, TypeError, ValueError):
+            raise HTTPException(status_code=401, detail="Invalid token subject")
+
         return payload
 
 
