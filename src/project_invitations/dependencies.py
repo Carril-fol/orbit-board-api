@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from collaborators.dependencies import get_collaborators_service
 from collaborators.interfaces import ICollaboratorService
-from projects.dependencies import get_project_service
-from projects.interfaces import IProjectService
+from projects.dependencies import get_project_service, get_project_authorization_service
+from projects.interfaces import IProjectService, IProjectAuthorizationService
 from shared.database import get_async_db
 
 from .interfaces import IProjectInvitationService
@@ -24,5 +24,11 @@ def get_project_invitation_service(
     ),
     project_service: IProjectService = Depends(get_project_service),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
+    project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> IProjectInvitationService:
-    return ProjectInvitationService(repository, project_service, collaborator_service)
+    return ProjectInvitationService(
+        repository,
+        project_service,
+        collaborator_service,
+        project_authorization_service,
+    )

@@ -1,7 +1,7 @@
 from secrets import token_urlsafe
 
 from collaborators.interfaces import ICollaboratorService
-from projects.interfaces import IProjectService
+from projects.interfaces import IProjectService, IProjectAuthorizationService
 
 from ..exceptions.project_invitation_exceptions import (
     InvitationAlreadyExistsError,
@@ -19,10 +19,12 @@ class ProjectInvitationService(IProjectInvitationService):
         repository: ProjectInvitationRepository,
         project_service: IProjectService,
         collaborator_service: ICollaboratorService,
+        project_authorization_service: IProjectAuthorizationService,
     ):
         self.repository = repository
         self.project_service = project_service
         self.collaborator_service = collaborator_service
+        self.project_authorization_service = project_authorization_service
 
     async def get_invitation_by_project_and_user(self, project_id: int, user_id: int):
         return await self.repository.get_project_invitation_by_project_id_and_user_id(
@@ -40,7 +42,9 @@ class ProjectInvitationService(IProjectInvitationService):
         data: CreateProjectInvitation,
         inviter_id: int,
     ):
-        project = await self.project_service.get_project_by_id(data.id_project)
+        project = await self.project_authorization_service.require_project_owner(
+            inviter_id, data.id_project
+        )
 
         collaborators_from_project = await self.collaborator_service.count_project_collaborators(
             data.id_project
@@ -50,10 +54,6 @@ class ProjectInvitationService(IProjectInvitationService):
             raise Exception("Project does not allow collaborators.")
         if project.max_collaborators <= collaborators_from_project:
             raise Exception("Project is full.")
-        if int(project.owner_id) != int(inviter_id):
-            raise PermissionError(
-                "You do not have permission to invite users to this project."
-            )
 
         invite = await self._get_invite_already_exists_or_none(
             data.id_project, data.id_invitee
