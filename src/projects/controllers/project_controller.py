@@ -82,7 +82,7 @@ async def delete_project(
 
 
 @router.get("/", response_model=ListProjectDetail, status_code=200)
-@cache(expire=30)
+@cache(expire=30) 
 @limiter.limit("5/minute")
 async def get_all_project(
     request: Request,

@@ -8,6 +8,13 @@ from .schemas.project_schema import (
     ListProjectDetail
 )
 
+class IProjectAuthorizationService(ABC):
+
+    @abstractmethod
+    async def require_project_owner(self, user_id: int, project_id: int) -> Project:
+        pass
+
+
 class IProjectService(ABC):
 
     @abstractmethod

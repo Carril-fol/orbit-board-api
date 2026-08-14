@@ -1,5 +1,5 @@
 from collaborators.interfaces import ICollaboratorService
-from ..interfaces import IProjectService
+from ..interfaces import IProjectService, IProjectAuthorizationService
 
 from ..exceptions.project_exception import (
     ProjectAlreadyHasStatus,
@@ -21,10 +21,12 @@ from ..schemas.project_schema import (
 class ProjectService(IProjectService):
     def __init__(
         self, project_repo: ProjectRepository,
-        collaborator_service: ICollaboratorService
+        collaborator_service: ICollaboratorService,
+        project_authorization_service: IProjectAuthorizationService
     ):
         self.project_repo = project_repo
         self.collaborator_service = collaborator_service
+        self.project_authorization_service = project_authorization_service
 
     async def get_project_by_id(self, id: int) -> Project:
         return await self._get_project_by_id_or_raise(id)
@@ -44,17 +46,17 @@ class ProjectService(IProjectService):
         project_entity = Project(**project_to_created.model_dump())
         project_created: Project = await self.project_repo.create(project_entity)
 
-        await self.collaborator_service.add_member_to_project(user_id, project_created.id, "OWNER")
+        # Ownership is recorded by project.owner_id above. The collaborator row only
+        # records membership; its role says what the person does on the project, and
+        # the creator has not declared that yet.
+        await self.collaborator_service.add_member_to_project(user_id, project_created.id, None)
 
     async def detail_project_by_id(self, id: int) -> ProjectDetail:
         project: Project = await self._get_project_by_id_or_raise(id)
         return ProjectDetail.model_validate(project)
 
     async def update_project(self, id: int, data: UpdateProjectInputSchema, user_id: int):
-        project: Project = await self._get_project_by_id_or_raise(id)
-
-        if project.owner_id != user_id:
-            raise ProjectInsufficientPrivileges()
+        project: Project = await self.project_authorization_service.require_project_owner(user_id, id)
 
         project_update = ProjectUpdateSchema(
             **data.model_dump(exclude_unset=True),
@@ -72,9 +74,7 @@ class ProjectService(IProjectService):
         await self.project_repo.update(project)
 
     async def delete_project(self, id: int, user_id: int, data: dict):
-        project: Project = await self._get_project_by_id_or_raise(id)
-        if project.owner_id != user_id:
-            raise ProjectInsufficientPrivileges()
+        project: Project = await self.project_authorization_service.require_project_owner(user_id, id)
 
         if project.status == "CANCELLED":
             raise ProjectAlreadyHasStatus()
