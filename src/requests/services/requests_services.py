@@ -1,7 +1,6 @@
 from collaborators.interfaces import ICollaboratorService
 from project_invitations.interfaces import IProjectInvitationService
-from projects.interfaces import IProjectService
-from projects.models.project import Project
+from projects.interfaces import IProjectService, IProjectAuthorizationService
 
 from ..models.requests_model import Request
 from ..repositories.requests_repository import RequestsRepository
@@ -27,16 +26,14 @@ class RequestsService(IRequestsService):
         requests_repository: RequestsRepository,
         project_service: IProjectService,
         project_invitation_service: IProjectInvitationService,
-        collaborator_service: ICollaboratorService
+        collaborator_service: ICollaboratorService,
+        project_authorization_service: IProjectAuthorizationService
     ):
         self.requests_repository = requests_repository
         self.project_service = project_service
         self.project_invitation_service = project_invitation_service
         self.collaborator_service = collaborator_service
-
-    def _ensure_is_owner(self, project: Project, user_id: int) -> None:
-        if project.owner_id != int(user_id):
-            raise PermissionError("Only the project owner can perform this action")
+        self.project_authorization_service = project_authorization_service
 
     async def _validate_if_exists(self, user_id: int, project_id: int) -> None:
         request = await self.requests_repository.get_request_by_user_id_and_project_id(user_id, project_id)
@@ -78,9 +75,7 @@ class RequestsService(IRequestsService):
         if request.status != RequestStatus.PENDING:
             raise RequestAlreadyRespondedError()
 
-        project = await self.project_service.get_project_by_id(request.project_id)
-
-        self._ensure_is_owner(project, user_id)
+        project = await self.project_authorization_service.require_project_owner(user_id, request.project_id)
 
         if accepted:
             request.status = RequestStatus.APPROVED
@@ -95,9 +90,7 @@ class RequestsService(IRequestsService):
         await self.requests_repository.update(request)
 
     async def get_all_requests(self, project_id: int, user_id: int) -> list[DetailRequestSchema]:
-        project = await self.project_service.get_project_by_id(project_id)
-
-        self._ensure_is_owner(project, user_id)
+        project = await self.project_authorization_service.require_project_owner(user_id, project_id)
 
         requests = await self.requests_repository.get_requests_by_project_id(project_id)
         return [DetailRequestSchema.model_validate(request) for request in requests]
@@ -107,8 +100,6 @@ class RequestsService(IRequestsService):
         if not request:
             raise RequestNotFound()
 
-        project = await self.project_service.get_project_by_id(request.project_id)
-
-        self._ensure_is_owner(project, user_id)
+        project = await self.project_authorization_service.require_project_owner(user_id, request.project_id)
 
         return DetailRequestSchema.model_validate(request)

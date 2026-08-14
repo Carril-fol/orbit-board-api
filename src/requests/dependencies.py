@@ -9,8 +9,8 @@ from collaborators.interfaces import ICollaboratorService
 from project_invitations.dependencies import get_project_invitation_service
 from project_invitations.interfaces import IProjectInvitationService
 
-from projects.dependencies import get_project_service
-from projects.interfaces import IProjectService
+from projects.dependencies import get_project_service, get_project_authorization_service
+from projects.interfaces import IProjectService, IProjectAuthorizationService
 
 from .interfaces import IRequestsService
 from .repositories.requests_repository import RequestsRepository
@@ -28,10 +28,12 @@ def get_requests_service(
     project_service: IProjectService = Depends(get_project_service),
     project_invitation_service: IProjectInvitationService = Depends(get_project_invitation_service),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
+    project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> IRequestsService:
     return RequestsService(
         repo,
         project_service,
         project_invitation_service,
         collaborator_service,
+        project_authorization_service,
     )
