@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Depends, Request, Response
 
-from core.security.jwt_manager import JwtManager, jwt_required
+from core.security.jwt_manager import (
+    JwtManager,
+    jwt_required,
+    jwt_refresh_required,
+    set_auth_cookies,
+    clear_auth_cookies,
+)
 from shared.extensions import limiter
 
 from ..dependencies import get_auth_service
@@ -47,15 +53,20 @@ async def login(
 
     access_token = jwt_manager.create_access_token(user_id=user_id)
     refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
-    response.set_cookie(key="access_token", value=access_token)
-    response.set_cookie(key="refresh_token", value=refresh_token)
+    set_auth_cookies(response, access_token, refresh_token)
     return LoginOutputSchema(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/logout", response_model=AuthOutputSchema, status_code=200)
-async def logout(response: Response, _payload: dict = Depends(jwt_required)):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+@router.post(
+    "/logout", 
+    response_model=AuthOutputSchema, 
+    status_code=200
+)
+async def logout(
+    response: Response, 
+    _payload: dict = Depends(jwt_required)
+):
+    clear_auth_cookies(response)
     return AuthOutputSchema(msg="Logout successfully")
 
 
@@ -66,12 +77,11 @@ async def logout(response: Response, _payload: dict = Depends(jwt_required)):
 )
 async def refresh(
     response: Response,
-    _payload: dict = Depends(jwt_required),
+    _payload: dict = Depends(jwt_refresh_required),
 ):
     user_id = _payload["sub"]
     access_token = JwtManager.create_access_token(user_id=user_id)
     refresh_token = JwtManager.create_refresh_token(user_id=user_id)
 
-    response.set_cookie(key="access_token", value=access_token)
-    response.set_cookie(key="refresh_token", value=refresh_token)
+    set_auth_cookies(response, access_token, refresh_token)
     return LoginOutputSchema(access_token=access_token, refresh_token=refresh_token)

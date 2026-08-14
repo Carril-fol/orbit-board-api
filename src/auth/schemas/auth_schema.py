@@ -1,6 +1,4 @@
 import string
-from datetime import datetime, timezone
-
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 

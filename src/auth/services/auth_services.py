@@ -2,7 +2,7 @@ from core.security.password_manager import PasswordManager
 from users.models.user import User
 from users.interfaces import IUserService
 
-from ..auth_exception import (
+from ..exceptions import (
     InvalidCredentialsException,
     AuthUserAlreadyExistWithThatEmail
 )
