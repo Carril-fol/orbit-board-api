@@ -16,3 +16,14 @@ class IAuditLogService(ABC):
         new_state: dict
     ) -> AuditLog | None:
         pass
+
+    @abstractmethod
+    async def record_event(
+        self,
+        user_id: int,
+        entity_type: str,
+        entity_id: int,
+        action: str,
+        data: dict,
+    ) -> AuditLog:
+        pass
