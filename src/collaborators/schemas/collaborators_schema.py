@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, field_validator, Field
 
 from users.schemas.user_schema import UserResponse
@@ -7,8 +9,8 @@ class RegisterCollaboratorsInputSchema(BaseModel):
     """
     Schema for registering a user as a collaborator in a project.
     """
-    role: str = Field(
-        ...,
+    role: Optional[str] = Field(
+        None,
         description="Role assigned to the user within the project.",
         examples=["MEMBER"],
     )
@@ -28,8 +30,8 @@ class CreateCollaboratorsSchema(BaseModel):
     """
     Internal schema used to create a collaborator record in the database.
     """
-    role: str = Field(
-        ...,
+    role: Optional[str] = Field(
+        None,
         description="Role assigned to the user within the project.",
         examples=["MEMBER"],
     )
@@ -56,8 +58,8 @@ class DetailCollaboratorsSchema(BaseModel):
     """
     Schema for detailed collaborator information.
     """
-    role: str = Field(
-        ...,
+    role: Optional[str] = Field(
+        None,
         description="Role assigned to the collaborator within the project.",
         examples=["MEMBER"],
     )

@@ -1,3 +1,5 @@
+from projects.interfaces import IProjectAuthorizationService
+
 from ..interfaces import ICollaboratorService
 from ..models.collaborators_model import Collaborators
 from ..repositories.collaborator_repository import CollaboratorRepository
@@ -15,9 +17,14 @@ from ..exceptions import (
 
 
 class CollaboratorService(ICollaboratorService):
-    def __init__(self, repository: CollaboratorRepository):
+    def __init__(
+        self,
+        repository: CollaboratorRepository,
+        project_authorization_service: IProjectAuthorizationService,
+    ):
         self.repository = repository
-        
+        self.project_authorization_service = project_authorization_service
+
     async def count_project_collaborators(self, project_id: int) -> int:
         collaborators = await self.repository.get_collaborators_from_project(project_id)
         return len(collaborators)
@@ -26,12 +33,6 @@ class CollaboratorService(ICollaboratorService):
         collaborator = await self.repository.get_collaborator_by_user_id_and_project_id(user_id, project_id)
         if not collaborator:
             raise CollaboratorNotAuthorized()
-        return collaborator
-
-    async def require_project_owner(self, user_id: int, project_id: int) -> Collaborators:
-        collaborator = await self.require_project_member(user_id, project_id)
-        if collaborator.role != "OWNER":
-            raise CollaboratorProjectInsufficientPrivileges()
         return collaborator
 
     async def add_member_to_project(self, id_user: int, id_project: int, role: str) -> Collaborators:
@@ -55,7 +56,7 @@ class CollaboratorService(ICollaboratorService):
         if not collaborator:
             raise CollaboratorNotFound()
 
-        await self.require_project_owner(user_id, collaborator.id_project)
+        await self.project_authorization_service.require_project_owner(user_id, collaborator.id_project)
         await self.repository.delete(collaborator_id)
 
     async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int) -> Collaborators:
@@ -63,7 +64,7 @@ class CollaboratorService(ICollaboratorService):
         if not collaborator:
             raise CollaboratorNotFound()
 
-        await self.require_project_owner(user_id, collaborator.id_project)
+        await self.project_authorization_service.require_project_owner(user_id, collaborator.id_project)
 
         for key, value in data.model_dump().items():
             setattr(collaborator, key, value)

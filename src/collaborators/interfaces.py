@@ -37,7 +37,3 @@ class ICollaboratorService(ABC):
         """Return the collaborator, or raise if the user does not belong to the project."""
         pass
 
-    @abstractmethod
-    async def require_project_owner(self, user_id: int, project_id: int) -> Collaborators:
-        """Return the collaborator, or raise if the user is not the project owner."""
-        pass

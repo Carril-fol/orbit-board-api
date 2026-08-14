@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.database import get_async_db
 
+from projects.authorization_dependencies import get_project_authorization_service
+from projects.interfaces import IProjectAuthorizationService
+
 from .interfaces import ICollaboratorService
 from .repositories.collaborator_repository import CollaboratorRepository
 from .services.collaborators_service import CollaboratorService
@@ -13,7 +16,7 @@ def get_collaborators_repository(db: AsyncSession = Depends(get_async_db)) -> Co
 
 
 def get_collaborators_service(
-    db: AsyncSession = Depends(get_async_db)
+    repo: CollaboratorRepository = Depends(get_collaborators_repository),
+    project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> ICollaboratorService:
-    collaborator_repo = CollaboratorRepository(db)
-    return CollaboratorService(collaborator_repo)
+    return CollaboratorService(repo, project_authorization_service)
