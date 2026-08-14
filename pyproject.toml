@@ -1,16 +1,18 @@
 [project]
-name = "project-board-api"
+name = "orbit-board-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Orbit Board is a project management API designed to eliminate friction in collaboration. It allows users to create workspaces, publish them to attract collaborators or invite specific individuals, and manage workflows through a system of hierarchical tasks and comments."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.4",
     "argon2-cffi>=25.1.0",
+    "asyncpg>=0.31.0",
     "fastapi>=0.138.0",
     "fastapi-cache2>=0.2.2",
+    # Not imported here: fastapi-cache2 reaches starlette.templating, which needs
+    # jinja2 and does not declare it. Removing this breaks startup.
     "jinja2>=3.1.6",
-    "psycopg2-binary>=2.9.10",
     "pwdlib>=0.3.0",
     "pydantic-settings>=2.14.2",
     "pydantic[email]>=2.13.4",
@@ -27,4 +29,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/shared", "src/users"]
+packages = [
+    "src/shared",
+    "src/users",
+    "src/auth",
+    "src/audit_logs",
+    "src/projects", 
+    "src/projects_tags", 
+    "src/tasks", 
+    "src/requests",
+    "src/comments", 
+    "src/core",
+    "src/project_invitations",
+    "src/collaborators", 
+]
