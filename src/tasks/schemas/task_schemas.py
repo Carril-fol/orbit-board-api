@@ -43,6 +43,27 @@ class UpdateTaskInputSchema(BaseModel):
     parent_id: Optional[int] = Field(None, description="Change the parent task of this task", examples=[12])
 
 
+class SubtaskOutputSchema(BaseModel):
+    """
+    Schema for a subtask nested inside a task.
+
+    Deliberately non-recursive: subtasks are one level deep, so serializing a task
+    never needs to load a deeper level of the tree.
+    """
+    id: int = Field(..., description="The unique identifier of the subtask", examples=[2])
+    title: str = Field(..., description="The title of the subtask", examples=["Write the token refresh endpoint"])
+    description: Optional[str] = Field(None, description="Detailed description of the subtask", examples=["Rotate the refresh token on every use..."])
+    status: TaskStatus = Field(..., description="The current state of the subtask", examples=[TaskStatus.TO_DO])
+    priority: TaskPriority = Field(..., description="Priority level of the subtask", examples=[TaskPriority.MEDIUM])
+    expiration_date: Optional[datetime] = Field(None, description="Deadline for the subtask")
+    project_id: int = Field(..., description="The ID of the project this subtask is associated with", examples=[1])
+    parent_id: Optional[int] = Field(None, description="The ID of the parent task", examples=[10])
+    deleted_at: Optional[datetime] = Field(None, description="Timestamp when the subtask was deleted.")
+
+    class Config:
+        from_attributes = True
+
+
 class DetailTaskOutputSchema(BaseModel):
     """
     Schema for detailed task information.
@@ -55,7 +76,7 @@ class DetailTaskOutputSchema(BaseModel):
     expiration_date: Optional[datetime] = Field(None, description="Deadline for the task")
     project_id: int = Field(..., description="The ID of the project this task is associated with", examples=[1])
     parent_id: Optional[int] = Field(None, description="The ID of the parent task, if applicable", examples=[10])
-    subtasks: list["DetailTaskOutputSchema"] = Field(default=[], description="List of nested subtasks for this task")
+    subtasks: list[SubtaskOutputSchema] = Field(default=[], description="Subtasks of this task (one level deep)")
     progress: float = Field(..., description="Automatic progress calculation based on completed subtasks (0-100%)", examples=[45.5])
     deleted_at: Optional[datetime] = Field(None, description="Timestamp when the task was deleted.")
 

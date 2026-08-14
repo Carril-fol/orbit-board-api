@@ -9,6 +9,9 @@ from collaborators.interfaces import ICollaboratorService
 from audit_logs.dependencies import get_audit_log_service
 from audit_logs.interfaces import IAuditLogService
 
+from projects.dependencies import get_project_authorization_service
+from projects.interfaces import IProjectAuthorizationService
+
 from .interfaces import ITaskService, ITaskUserService
 from .repositories.task_repository import TaskRepository
 from .repositories.task_user_repository import TaskUserRepository
@@ -32,8 +35,9 @@ def get_task_service(
     repo: TaskRepository = Depends(get_task_repository),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
     audit_log_service: IAuditLogService = Depends(get_audit_log_service),
+    project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> ITaskService:
-    return TaskService(repo, collaborator_service, audit_log_service)
+    return TaskService(repo, collaborator_service, audit_log_service, project_authorization_service)
 
 
 def get_task_user_service(
@@ -41,10 +45,12 @@ def get_task_user_service(
     task_repo: TaskRepository = Depends(get_task_repository),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
     audit_log_service: IAuditLogService = Depends(get_audit_log_service),
+    project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> ITaskUserService:
     return TaskUserService(
         task_user_repo=task_user_repo,
         task_repo=task_repo,
         collaborator_service=collaborator_service,
         audit_log_service=audit_log_service,
+        project_authorization_service=project_authorization_service,
     )

@@ -4,6 +4,8 @@ from audit_logs.interfaces import IAuditLogService
 
 from collaborators.interfaces import ICollaboratorService
 
+from projects.interfaces import IProjectAuthorizationService
+
 from tasks.models.task_model import Task
 from tasks.repositories.task_repository import TaskRepository
 
@@ -25,11 +27,13 @@ class TaskUserService(ITaskUserService):
         collaborator_service: ICollaboratorService,
         task_repo: TaskRepository,
         audit_log_service: IAuditLogService,
+        project_authorization_service: IProjectAuthorizationService,
     ):
         self.repo = task_user_repo
         self.collaborator_service = collaborator_service
         self.task_repo = task_repo
         self.audit_log_service = audit_log_service
+        self.project_authorization_service = project_authorization_service
 
     async def _get_task_or_raise(self, task_id: int) -> Task:
         task = await self.task_repo.get_by_id(task_id)
@@ -46,7 +50,7 @@ class TaskUserService(ITaskUserService):
     async def assign_user_to_task(self, task_id: int, target_user_id: int, actor_user_id: int ) -> None:
         task = await self._get_task_or_raise(task_id)
 
-        await self.collaborator_service.require_project_owner(
+        await self.project_authorization_service.require_project_owner(
             actor_user_id,
             task.project_id,
         )
@@ -60,15 +64,12 @@ class TaskUserService(ITaskUserService):
 
         await self.repo.assign_user(task_id, target_user_id,)
 
-        await self.audit_log_service.record_diff(
+        await self.audit_log_service.record_event(
             user_id=actor_user_id,
             entity_type="TaskUser",
             entity_id=task_id,
             action="assign_user",
-            old_state={
-                "user_id": None,
-            },
-            new_state={
+            data={
                 "user_id": target_user_id,
             },
         )
@@ -76,7 +77,7 @@ class TaskUserService(ITaskUserService):
     async def unassign_user_from_task(self, task_id: int, target_user_id: int, actor_user_id: int) -> None:
         task = await self._get_task_or_raise(task_id)
 
-        await self.collaborator_service.require_project_owner(
+        await self.project_authorization_service.require_project_owner(
             actor_user_id,
             task.project_id,
         )
@@ -94,16 +95,12 @@ class TaskUserService(ITaskUserService):
 
         await self.repo.update(task_user)
 
-        await self.audit_log_service.record_diff(
+        await self.audit_log_service.record_event(
             user_id=actor_user_id,
             entity_type="TaskUser",
             entity_id=task_id,
             action="unassign_user",
-            old_state={
-                "user_id": target_user_id,
-                "status": TaskUserStatus.ASSIGNED.value,
-            },
-            new_state={
+            data={
                 "user_id": target_user_id,
                 "status": TaskUserStatus.UNASSIGNED.value,
             },
