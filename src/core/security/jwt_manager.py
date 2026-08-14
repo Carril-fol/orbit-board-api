@@ -17,7 +17,8 @@ class JwtManager:
         payload = {
             "sub": str(user_id),
             "type": "access_token",
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
+            "exp": datetime.now(timezone.utc)
+            + timedelta(seconds=settings.jwt_access_token_expires),
         }
 
         return jwt.encode(payload, cls.SECRET_KEY, algorithm=cls.ALGORITHM)
@@ -27,7 +28,8 @@ class JwtManager:
         payload = {
             "sub": str(user_id),
             "type": "refresh_token",
-            "exp": datetime.now(timezone.utc) + timedelta(days=7),
+            "exp": datetime.now(timezone.utc)
+            + timedelta(seconds=settings.jwt_refresh_token_expires),
         }
 
         return jwt.encode(payload, cls.SECRET_KEY, algorithm=cls.ALGORITHM)
@@ -60,6 +62,32 @@ class JwtManager:
         return payload
 
 
+def set_auth_cookies(response, access_token: str, refresh_token: str) -> None:
+    for name, token, max_age in (
+        ("access_token", access_token, settings.jwt_access_token_expires),
+        ("refresh_token", refresh_token, settings.jwt_refresh_token_expires),
+    ):
+        response.set_cookie(
+            key=name,
+            value=token,
+            max_age=max_age,
+            httponly=settings.jwt_cookie_httponly,
+            secure=settings.jwt_cookie_secure,
+            samesite=settings.jwt_cookie_samesite.lower(),
+        )
+
+
+def clear_auth_cookies(response) -> None:
+    """Delete the auth cookies with the same flags they were written with."""
+    for name in ("access_token", "refresh_token"):
+        response.delete_cookie(
+            key=name,
+            httponly=settings.jwt_cookie_httponly,
+            secure=settings.jwt_cookie_secure,
+            samesite=settings.jwt_cookie_samesite.lower(),
+        )
+
+
 access_token_cookie = APIKeyCookie(name="access_token", auto_error=False)
 refresh_token_cookie = APIKeyCookie(name="refresh_token", auto_error=False)
 
@@ -78,3 +106,7 @@ def get_refresh_token_from_cookie(token: str = Depends(refresh_token_cookie)) ->
 
 def jwt_required(token: str = Depends(get_access_token_from_cookie)):
     return JwtManager.validate_token(token, "access_token")
+
+
+def jwt_refresh_required(token: str = Depends(get_refresh_token_from_cookie)):
+    return JwtManager.validate_token(token, "refresh_token")

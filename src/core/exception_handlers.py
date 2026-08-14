@@ -37,7 +37,7 @@ from tasks.exceptions import (
     TaskUserIsNotAnCollaborator,
     TaskUserAlreadyStatusAssigned
 )
-from auth.auth_exception import (
+from auth.exceptions import (
     InvalidCredentialsException,
     InvalidTokenExceptions,
     AuthUserAlreadyExistWithThatEmail
