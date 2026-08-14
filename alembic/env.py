@@ -1,8 +1,10 @@
+import asyncio
 import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
@@ -21,11 +23,14 @@ from audit_logs.models.audit_log_model import AuditLog
 
 from shared.config.settings import settings
 from shared.database import Base
+from shared.database.database import sanitize_url
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.neon_database_url)
+# Same sanitizing the app does: the Neon URL carries libpq parameters
+# (sslmode, channel_binding) that asyncpg does not accept.
+config.set_main_option("sqlalchemy.url", sanitize_url(settings.neon_database_url))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -64,24 +69,34 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+def do_run_migrations(connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
+    with context.begin_transaction():
+        context.run_migrations()
 
-    """
-    connectable = engine_from_config(
+
+async def run_async_migrations() -> None:
+    connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
 
-        with context.begin_transaction():
-            context.run_migrations()
+    await connectable.dispose()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode.
+
+    The project uses asyncpg, so the engine and the connection are async and the
+    migration itself runs through run_sync.
+
+    """
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():
