@@ -27,5 +27,7 @@ class User(Base):
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     collaborators: Mapped["Collaborators"] = relationship(
-        "Collaborators", back_populates="user"
+        "Collaborators", 
+        back_populates="user",
+        cascade="all, delete-orphan"
     )

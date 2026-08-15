@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 
 class UserResponse(BaseModel):
     """
@@ -12,8 +12,7 @@ class UserResponse(BaseModel):
     email: str = Field(..., description="User's email address.", examples=["john.doe@example.com"])
     password: str = Field(..., description="User's password", examples=["Supersecure123-"])
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
         
 
 class UserCreateSchema(BaseModel):
