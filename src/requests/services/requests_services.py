@@ -92,7 +92,7 @@ class RequestsService(IRequestsService):
     async def get_all_requests(self, project_id: int, user_id: int) -> list[DetailRequestSchema]:
         project = await self.project_authorization_service.require_project_owner(user_id, project_id)
 
-        requests = await self.requests_repository.get_requests_by_project_id(project_id)
+        requests = await self.requests_repository.get_requests_by_project_id(project.id)
         return [DetailRequestSchema.model_validate(request) for request in requests]
 
     async def get_request(self, request_id: int, user_id: int) -> DetailRequestSchema:
@@ -100,6 +100,6 @@ class RequestsService(IRequestsService):
         if not request:
             raise RequestNotFound()
 
-        project = await self.project_authorization_service.require_project_owner(user_id, request.project_id)
+        await self.project_authorization_service.require_project_owner(user_id, request.project_id)
 
         return DetailRequestSchema.model_validate(request)

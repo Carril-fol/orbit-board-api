@@ -76,6 +76,8 @@ class DetailRequestSchema(BaseModel):
     user_id: int = Field(..., description="The unique identifier of the user.", examples=[10])
     status: RequestStatus = Field(..., description="The current status of the request.", examples=[RequestStatus.PENDING])
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ListDetailRequestSchema(BaseModel):
     """
