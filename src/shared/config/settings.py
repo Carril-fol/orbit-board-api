@@ -1,7 +1,7 @@
 import os
 from functools import lru_cache
-from typing import Literal
  
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     server_host: str = "0.0.0.0"
     server_port: int = 8000
  
-    jwt_secret_key: str
     jwt_token_location: list[str] = ["cookies"]
     jwt_access_token_expires: int = 1800
     jwt_refresh_token_expires: int = 2592000
@@ -20,11 +19,10 @@ class Settings(BaseSettings):
     jwt_cookie_samesite: str = "None"
     jwt_cookie_csrf_protect: bool = False
     jwt_csrf_in_cookies: bool = False
- 
+
+    cors_origins: list[str] = []
     cors_supports_credentials: bool = True
- 
-    redis_url: str | None = None
- 
+
     debug: bool = False
  
     model_config = SettingsConfigDict(
@@ -36,6 +34,10 @@ class Settings(BaseSettings):
  
 class DevelopmentSettings(Settings):
     debug: bool = True
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
     jwt_cookie_csrf_protect: bool = False
     jwt_cookie_httponly: bool = True
     jwt_csrf_in_cookies: bool = False
