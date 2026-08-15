@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.task_model import TaskPriority, TaskStatus
 
@@ -60,8 +60,8 @@ class SubtaskOutputSchema(BaseModel):
     parent_id: Optional[int] = Field(None, description="The ID of the parent task", examples=[10])
     deleted_at: Optional[datetime] = Field(None, description="Timestamp when the subtask was deleted.")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 
 class DetailTaskOutputSchema(BaseModel):
@@ -80,8 +80,8 @@ class DetailTaskOutputSchema(BaseModel):
     progress: float = Field(..., description="Automatic progress calculation based on completed subtasks (0-100%)", examples=[45.5])
     deleted_at: Optional[datetime] = Field(None, description="Timestamp when the task was deleted.")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 
 class ListDetailTaskOutputSchema(BaseModel):
