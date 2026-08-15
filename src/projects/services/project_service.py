@@ -34,7 +34,7 @@ class ProjectService(IProjectService):
     async def _get_project_by_id_or_raise(self, id: int) -> Project:
         project = await self.project_repo.get_project_by_id(id)
         if not project:
-            raise ProjectNotFoundError("Project not found")
+            raise ProjectNotFoundError()
         return project
 
     async def create_project(self, data: RegisterProjectInputSchema, user_id: int):
@@ -45,10 +45,7 @@ class ProjectService(IProjectService):
 
         project_entity = Project(**project_to_created.model_dump())
         project_created: Project = await self.project_repo.create(project_entity)
-
-        # Ownership is recorded by project.owner_id above. The collaborator row only
-        # records membership; its role says what the person does on the project, and
-        # the creator has not declared that yet.
+        
         await self.collaborator_service.add_member_to_project(user_id, project_created.id, None)
 
     async def detail_project_by_id(self, id: int) -> ProjectDetail:

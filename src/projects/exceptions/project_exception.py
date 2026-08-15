@@ -1,5 +1,6 @@
 class ProjectNotFoundError(Exception):
-    pass
+    def __init__(self):
+        super().__init__("Project not found.")
 
 
 class ProjectInsufficientPrivileges(Exception):
