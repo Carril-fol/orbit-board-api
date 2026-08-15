@@ -10,7 +10,8 @@ from core.exception_handlers import (
     register_collaborators_exception_handlers,
     register_tasks_exception_handlers,
     register_project_tag_exception_handlers,
-    register_auth_exception_handlers
+    register_auth_exception_handlers,
+    register_request_exception_handlers
 )
 from core.lifespan import lifespan
 from core.routers import register_routers
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     register_project_tag_exception_handlers(app)
     register_exception_handlers(app)
     register_auth_exception_handlers(app)
+    register_request_exception_handlers(app)
 
     register_routers(app)
     return app
