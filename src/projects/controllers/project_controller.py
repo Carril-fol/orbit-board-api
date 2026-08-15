@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi_cache.decorator import cache
 
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
@@ -39,7 +38,6 @@ async def create_project(
 
 
 @router.get("/get/{id}", response_model=ProjectDetail, status_code=200)
-@cache(expire=30)
 @limiter.limit("5/minute")
 async def get_project(
     request: Request,
@@ -82,7 +80,6 @@ async def delete_project(
 
 
 @router.get("/", response_model=ListProjectDetail, status_code=200)
-@cache(expire=30) 
 @limiter.limit("5/minute")
 async def get_all_project(
     request: Request,

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi_cache.decorator import cache
 
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
@@ -43,7 +42,6 @@ async def create_task(
     response_model=DetailTaskOutputSchema,
     status_code=200,
 )
-@cache(expire=60)
 @limiter.limit("10/minute")
 async def get_task(
     request: Request,
@@ -61,7 +59,6 @@ async def get_task(
     response_model=ListDetailTaskOutputSchema,
     status_code=200,
 )
-@cache(expire=60)
 @limiter.limit("10/minute")
 async def get_tasks(
     request: Request,
@@ -121,7 +118,6 @@ async def update_task(
     response_model=ListDetailTaskOutputSchema,
     status_code=200,
 )
-@cache(expire=60)
 @limiter.limit("10/minute")
 async def get_tasks_by_title_or_description(
     request: Request,

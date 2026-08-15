@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi_cache.decorator import cache
 
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
@@ -76,7 +75,6 @@ async def decline(
     response_model=ListDetailRequestSchema,
     status_code=200,
 )
-@cache(expire=60)
 @limiter.limit("10/minute")
 async def get_all(
     request: Request,
@@ -94,7 +92,6 @@ async def get_all(
     response_model=DetailRequestSchema,
     status_code=200,
 )
-@cache(expire=120)
 @limiter.limit("10/minute")
 async def get_request(
     request: Request,

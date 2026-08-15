@@ -11,6 +11,7 @@ from projects.exceptions.project_exception import (
 )
 from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
 from collaborators.exceptions import (
+    CollaboratorAlreadyExists,
     CollaboratorNotAuthorized,
     CollaboratorNotFound,
     CollaboratorProjectInsufficientPrivileges,
@@ -182,6 +183,13 @@ def register_collaborators_exception_handlers(app):
         request: Request, exc: CollaboratorProjectInsufficientPrivileges
     ):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+    # 409 to match RequestCollaboratorAlreadyExists: same "already there" shape.
+    @app.exception_handler(CollaboratorAlreadyExists)
+    async def collaborator_already_exists_handler(
+        request: Request, exc: CollaboratorAlreadyExists
+    ):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
 
 def register_comments_exception_handlers(app):
