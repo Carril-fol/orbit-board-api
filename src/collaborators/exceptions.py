@@ -3,7 +3,8 @@ class CollaboratorNotFound(Exception):
 
 
 class CollaboratorAlreadyExists(Exception):
-    pass
+    def __init__(self):
+        super().__init__("This user is already a collaborator of this project")
 
 
 class CollaboratorNotAuthorized(Exception):

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from shared.database import Base
@@ -8,6 +8,11 @@ from shared.database import Base
 
 class Collaborators(Base):
     __tablename__ = "collaborators"
+    # A person joins a project once. Without this the same user can be added
+    # twice, which double-counts against the project's max_collaborators.
+    __table_args__ = (
+        UniqueConstraint("id_user", "id_project", name="uq_collaborators_user_project"),
+    )
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, index=True
     )
