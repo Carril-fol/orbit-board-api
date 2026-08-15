@@ -11,8 +11,7 @@ from ..schemas.collaborators_schema import (
 )
 from ..exceptions import (
     CollaboratorNotAuthorized,
-    CollaboratorNotFound,
-    CollaboratorProjectInsufficientPrivileges
+    CollaboratorNotFound
 )
 
 

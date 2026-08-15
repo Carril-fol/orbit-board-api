@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, ConfigDict, field_validator, Field
 
 from users.schemas.user_schema import UserResponse
 
@@ -68,8 +68,8 @@ class DetailCollaboratorsSchema(BaseModel):
         description="User information associated with the collaborator.",
     )
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 
 class ListDetailCollaboratorsSchema(BaseModel):
