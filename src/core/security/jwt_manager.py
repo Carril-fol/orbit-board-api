@@ -78,7 +78,6 @@ def set_auth_cookies(response, access_token: str, refresh_token: str) -> None:
 
 
 def clear_auth_cookies(response) -> None:
-    """Delete the auth cookies with the same flags they were written with."""
     for name in ("access_token", "refresh_token"):
         response.delete_cookie(
             key=name,

@@ -3,23 +3,13 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from project_invitations.exceptions.project_invitation_exceptions import (
-    InvitationAlreadyExistsError,
-    InvitationNotFoundError,
-)
+
 from projects.exceptions.project_exception import (
     ProjectAlreadyHasStatus,
     ProjectInsufficientPrivileges,
     ProjectNotFoundError,
 )
 from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
-# from requests.exceptions import (
-#     CollaboratorAlreadyExists,
-#     RequestAlreadyExists,
-#     RequestAlreadyRespondedError,
-#     RequestNotFound,
-#     UserAlreadyIsInvited,
-# )
 from collaborators.exceptions import (
     CollaboratorNotAuthorized,
     CollaboratorNotFound,
@@ -42,30 +32,53 @@ from auth.exceptions import (
     InvalidTokenExceptions,
     AuthUserAlreadyExistWithThatEmail
 )
+from project_invitations.exceptions import (
+    ProjectInvitationPermissionError,
+    ProjectInvitationAlreadyExistsError,
+    ProjectInvitationNotFoundError,
+    ProjectInvitationAlreadyResponded,
+    ProjectInvitationNotAllowCollaborators,
+    ProjectInvitationIsAlreadyFull
+)
+from requests.exceptions import (
+    RequestCollaboratorAlreadyExists,
+    RequestAlreadyExists,
+    RequestAlreadyRespondedError,
+    RequestNotFound,
+    RequestUserAlreadyIsInvited,
+    RequestProjectNotFoundError
+)
 
-# Handler exceptions rate limit exceeded
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# Handler exceptions for project invitation
 def register_invitation_exception_handlers(app):
-    @app.exception_handler(PermissionError)
-    async def permission_handler(request: Request, exc: PermissionError):
+    @app.exception_handler(ProjectInvitationPermissionError)
+    async def permission_handler(request: Request, exc: ProjectInvitationPermissionError):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
 
-    @app.exception_handler(InvitationAlreadyExistsError)
-    async def already_exists_handler(
-        request: Request, exc: InvitationAlreadyExistsError
-    ):
+    @app.exception_handler(ProjectInvitationAlreadyExistsError)
+    async def already_exists_handler(request: Request, exc: ProjectInvitationAlreadyExistsError):
         return JSONResponse(status_code=409, content={"detail": str(exc)})
 
-    @app.exception_handler(InvitationNotFoundError)
-    async def not_found_handler(request: Request, exc: InvitationNotFoundError):
+    @app.exception_handler(ProjectInvitationNotFoundError)
+    async def not_found_handler(request: Request, exc: ProjectInvitationNotFoundError):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
+    @app.exception_handler(ProjectInvitationAlreadyResponded)
+    async def already_responded_handler(request: Request, exc: ProjectInvitationAlreadyResponded):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-# Handler exceptions for project
+    @app.exception_handler(ProjectInvitationNotAllowCollaborators)
+    async def not_allow_collaborators_handler(request: Request, exc: ProjectInvitationNotAllowCollaborators):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    @app.exception_handler(ProjectInvitationIsAlreadyFull)
+    async def is_already_full_handler(request: Request, exc: ProjectInvitationIsAlreadyFull):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
 def register_project_exception_handlers(app):
 
     @app.exception_handler(ProjectNotFoundError)
@@ -85,46 +98,41 @@ def register_project_exception_handlers(app):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-# Handler exceptions for requests
-# def register_request_exception_handlers(app):
-#     @app.exception_handler(Exception)
-#     async def handler(request: Request, exc: Exception):
-#         return JSONResponse(status_code=500, content={"detail": str(exc)})
+def register_request_exception_handlers(app):
 
-#     @app.exception_handler(RequestNotFound)
-#     async def not_found_handler(request: Request, exc: RequestNotFound):
-#         return JSONResponse(status_code=404, content={"detail": str(exc)})
+    @app.exception_handler(RequestNotFound)
+    async def request_not_found_handler(request: Request, exc: RequestNotFound):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
 
-#     @app.exception_handler(CollaboratorAlreadyExists)
-#     async def collaborator_already_exists_handler(
-#         request: Request, exc: CollaboratorAlreadyExists
-#     ):
-#         return JSONResponse(status_code=400, content={"detail": str(exc)})
+    @app.exception_handler(RequestProjectNotFoundError)
+    async def request_project_not_found_handler(request: Request, exc: RequestProjectNotFoundError):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
 
-#     @app.exception_handler(ProjectNotFoundRequests)
-#     async def project_not_found_handler(request: Request, exc: ProjectNotFoundError):
-#         return JSONResponse(status_code=404, content={"detail": str(exc)})
+    @app.exception_handler(RequestCollaboratorAlreadyExists)
+    async def request_collaborator_already_exists_handler(
+        request: Request, exc: RequestCollaboratorAlreadyExists
+    ):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
-#     @app.exception_handler(RequestAlreadyExists)
-#     async def request_already_exists_handler(
-#         request: Request, exc: RequestAlreadyExists
-#     ):
-#         return JSONResponse(status_code=400, content={"detail": str(exc)})
+    @app.exception_handler(RequestAlreadyExists)
+    async def request_already_exists_handler(
+        request: Request, exc: RequestAlreadyExists
+    ):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
-#     @app.exception_handler(RequestAlreadyRespondedError)
-#     async def request_already_responded_handler(
-#         request: Request, exc: RequestAlreadyRespondedError
-#     ):
-#         return JSONResponse(status_code=400, content={"detail": str(exc)})
+    @app.exception_handler(RequestUserAlreadyIsInvited)
+    async def request_user_already_is_invited_handler(
+        request: Request, exc: RequestUserAlreadyIsInvited
+    ):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
-#     @app.exception_handler(UserAlreadyIsInvited)
-#     async def user_already_is_invited_handler(
-#         request: Request, exc: UserAlreadyIsInvited
-#     ):
-#         return JSONResponse(status_code=400, content={"detail": str(exc)})
+    @app.exception_handler(RequestAlreadyRespondedError)
+    async def request_already_responded_handler(
+        request: Request, exc: RequestAlreadyRespondedError
+    ):
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-# Handler exceptions for project tags
 def register_project_tag_exception_handlers(app):
     
     @app.exception_handler(ProjectTagNotFound)
@@ -151,7 +159,7 @@ def register_tasks_exception_handlers(app):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
     
     @app.exception_handler(TaskUserHasNotPermission)
-    async def task_user_is_not_an_collaborator(request: Request, exc: TaskUserIsNotAnCollaborator):
+    async def task_user_has_not_permission(request: Request, exc: TaskUserHasNotPermission):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
     
     @app.exception_handler(TaskUserAlreadyStatusAssigned)
