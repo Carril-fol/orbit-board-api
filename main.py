@@ -13,8 +13,8 @@ from core.exception_handlers import (
     register_auth_exception_handlers,
     register_request_exception_handlers
 )
-from core.lifespan import lifespan
 from core.routers import register_routers
+from shared.config.settings import settings
 from shared.extensions import limiter
 
 
@@ -26,7 +26,6 @@ def create_app() -> FastAPI:
             "name": "Folco Carril",
             "url": "https://folcocarril.dev"
         },
-        lifespan=lifespan,
         docs_url="/docs"
     )
     app.state.limiter = limiter
@@ -48,10 +47,10 @@ app = create_app()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins="*", 
-    allow_credentials=True,
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_supports_credentials,
     allow_methods=["*"],
-    allow_headers=["*"], 
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
