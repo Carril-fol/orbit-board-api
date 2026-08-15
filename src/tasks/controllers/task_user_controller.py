@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/{task_id}/users",
+    "/assign/{task_id}",
     response_model=TaskOutputSchema,
     status_code=200,
 )
@@ -37,7 +37,7 @@ async def assign_user_to_task(
 
 
 @router.delete(
-    "/{task_id}/users/{user_id}",
+    "/unassign/{task_id}/{user_id}",
     response_model=TaskOutputSchema,
     status_code=200,
 )
