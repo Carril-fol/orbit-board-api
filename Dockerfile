@@ -2,12 +2,6 @@ FROM python:3.13-alpine AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apk add --no-cache \
-    python3-dev \
-    postgresql-dev \
-    gcc \
-    musl-dev
-
 WORKDIR /project-board-api
 
 COPY pyproject.toml uv.lock ./
@@ -21,8 +15,6 @@ COPY main.py .
 
 
 FROM python:3.13-alpine AS final
-
-RUN apk add --no-cache libpq
 
 WORKDIR /project-board-api
 

@@ -1,8 +1,8 @@
 services:
   api:
     build: .
-    image: project-board-api:latest
-    container_name: project-board-api
+    image: orbit-board-api:latest
+    container_name: orbit-board-api
     env_file:
       - .env
     ports:
