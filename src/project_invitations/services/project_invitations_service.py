@@ -7,9 +7,7 @@ from ..exceptions import (
     ProjectInvitationPermissionError,
     ProjectInvitationAlreadyExistsError,
     ProjectInvitationNotFoundError,
-    ProjectInvitationAlreadyResponded,
-    ProjectInvitationNotAllowCollaborators,
-    ProjectInvitationIsAlreadyFull
+    ProjectInvitationAlreadyResponded
 )
 from ..models.project_invitation_model import InvitationStatus, ProjectInvitation
 from ..repositories.project_invitation_repository import ProjectInvitationRepository
@@ -45,11 +43,7 @@ class ProjectInvitationService(IProjectInvitationService):
         project = await self.project_authorization_service.require_project_owner(inviter_id, data.id_project)
 
         collaborators_from_project = await self.collaborator_service.count_project_collaborators(project.id)
-
-        if project.max_collaborators <= 0:
-            raise ProjectInvitationNotAllowCollaborators()
-        if project.max_collaborators <= collaborators_from_project:
-            raise ProjectInvitationIsAlreadyFull()
+        await self.project_authorization_service.require_capacity_for(project.id, collaborators_from_project)
 
         invite = await self._get_invite_already_exists_or_none(project.id, data.id_invitee)
         if invite and (
@@ -87,12 +81,9 @@ class ProjectInvitationService(IProjectInvitationService):
         if int(invite.id_invitee) != int(user_id):
             raise ProjectInvitationPermissionError()
 
-        if (
-            invite.status == InvitationStatus.ACCEPTED
-            or invite.status == InvitationStatus.REJECTED
-        ):
+        if (invite.status == InvitationStatus.ACCEPTED or invite.status == InvitationStatus.REJECTED):
             raise ProjectInvitationAlreadyResponded()
-
+        
         if accepted and invite.status == InvitationStatus.PENDING:
             await self.collaborator_service.add_member_to_project(
                 id_user=user_id,
