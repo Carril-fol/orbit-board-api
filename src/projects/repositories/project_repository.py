@@ -15,11 +15,11 @@ class ProjectRepository(BaseRepository[Project]):
         return result.scalar_one_or_none()
 
     async def get_all_project(self, per_page: int, page: int) -> tuple[list[Project], int]:
-        count_stmt = select(func.count()).select_from(self.model)
+        count_stmt = select(func.count()).select_from(self.model).where(Project.status != "CANCELED")
         total_result = await self.db.execute(count_stmt)
         total = total_result.scalar()
 
-        stmt = select(self.model).offset((page - 1) * per_page).limit(per_page)
+        stmt = select(self.model).where(Project.status != "CANCELED").offset((page - 1) * per_page).limit(per_page)
 
         result = await self.db.execute(stmt)
         projects = result.scalars().all()

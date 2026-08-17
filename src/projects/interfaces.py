@@ -14,6 +14,10 @@ class IProjectAuthorizationService(ABC):
     async def require_project_owner(self, user_id: int, project_id: int) -> Project:
         pass
 
+    @abstractmethod
+    async def require_capacity_for(self, project_id: int, current_members: int) -> None:
+        pass
+
 
 class IProjectService(ABC):
 

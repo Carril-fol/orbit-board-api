@@ -9,7 +9,7 @@ class ProjectStatus(str, Enum):
     ACTIVE = "ACTIVE"
     ON_HOLD = "ON_HOLD"
     COMPLETED = "COMPLETED"
-    CANCELLED = "CANCELED"
+    CANCELED = "CANCELED"
 
 
 class RegisterProjectInputSchema(BaseModel):
@@ -51,10 +51,10 @@ class UpdateProjectInputSchema(BaseModel):
     """
     Schema for updating project details.
     """
-    name: Optional[str] = Field(None, description="Updated name of the project.", examples=["Project Beta"])
+    name: Optional[str] = Field(None, min_length=3, max_length=100, description="Updated name of the project.", examples=["Project Beta"])
     status: Optional[ProjectStatus] = Field(None, description="Updated status of the project.", examples=[ProjectStatus.ACTIVE])
-    description: Optional[str] = Field(None, description="Updated description of the project.", examples=["Updated goals for the project."])
-    max_collaborators: Optional[int] = Field(None, description="Updated maximum number of collaborators.", examples=[15])
+    description: Optional[str] = Field(None, min_length=10, max_length=500, description="Updated description of the project.", examples=["Updated goals for the project."])
+    max_collaborators: Optional[int] = Field(None, description="Updated maximum number of collaborators.", examples=[15], gt=0)
 
 
 class UpdateProjectOutputSchema(BaseModel):
