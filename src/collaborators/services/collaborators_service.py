@@ -36,15 +36,12 @@ class CollaboratorService(ICollaboratorService):
         return collaborator
 
     async def add_member_to_project(self, id_user: int, id_project: int, role: str) -> Collaborators:
-        # (id_user, id_project) is unique in the database. Someone can reach this
-        # twice through two doors -- an approved request and an accepted
-        # invitation -- so check first and answer with a 409 instead of letting
-        # the constraint surface as a 500.
-        already_member = await self.repository.get_collaborator_by_user_id_and_project_id(
-            id_user, id_project
-        )
+        already_member = await self.repository.get_collaborator_by_user_id_and_project_id(id_user, id_project)
         if already_member:
             raise CollaboratorAlreadyExists()
+
+        collaborators: int = await self.count_project_collaborators(id_project)
+        await self.project_authorization_service.require_capacity_for(id_project, collaborators)
 
         data = RegisterCollaboratorsInputSchema(role=role, id_user=id_user, id_project=id_project).model_dump()
         collaborator_entity = Collaborators(**data)
