@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, model_validato
 
 def password_strength_check(value: str) -> str:
     if not any(char in string.punctuation for char in value):
-        raise ValueError("La contraseña debe contener al menos un carácter especial")
+        raise ValueError("The password must contain at least one special character.")
     return value
 
 
@@ -35,9 +35,9 @@ class RegisterInputSchema(BaseModel):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=15,
+        max_length=128,
         description=(
-            "User's password. Must be between 8 and 15 characters "
+            "User's password. Must be at least 8 characters "
             "and contain at least one special character."
         ),
         examples=["Supersecure123-"],
@@ -46,7 +46,7 @@ class RegisterInputSchema(BaseModel):
     confirm_password: str = Field(
         ...,
         min_length=8,
-        max_length=15,
+        max_length=128,
         description="Confirmation of the user's password.",
         examples=["Supersecure123-"],
     )
@@ -71,34 +71,12 @@ class LoginInputSchema(BaseModel):
         ...,
         description="Email address associated with the user account.",
         examples=["example@gmail.com"],
-    )
+    )   
     password: str = Field(
         ...,
-        min_length=8,
-        max_length=15,
+        max_length=128,
         description="User's password.",
         examples=["Supersecure123-"],
-    )
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, value: str):
-        return password_strength_check(value)
-
-
-class LoginOutputSchema(BaseModel):
-    """
-    Schema containing the authentication tokens returned after login.
-    """
-    access_token: str = Field(
-        ...,
-        description="Short-lived JWT access token used to authenticate API requests.",
-        examples=["eyJhbGciOiJIUzI1NiIs..."],
-    )
-    refresh_token: str = Field(
-        ...,
-        description="Long-lived JWT refresh token used to obtain a new access token.",
-        examples=["eyJhbGciOiJIUzI1NiIs..."],
     )
 
 

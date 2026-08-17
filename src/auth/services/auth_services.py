@@ -33,9 +33,9 @@ class AuthService(IAuthService):
     async def authenticate(self, data: LoginInputSchema):
         user = await self.user_service.get_user_by_email(data.email)
         if not user:
-            raise InvalidCredentialsException("Invalid credentials")
+            raise InvalidCredentialsException()
 
         if not self.password_manager.verify(data.password, user.password):
-            raise InvalidCredentialsException("Invalid credentials")
+            raise InvalidCredentialsException()
 
         return user.id

@@ -13,7 +13,6 @@ from ..dependencies import get_auth_service
 from ..schemas.auth_schema import (
     AuthOutputSchema,
     LoginInputSchema,
-    LoginOutputSchema,
     RegisterInputSchema,
 )
 from ..interfaces import IAuthService
@@ -38,7 +37,7 @@ async def register(
 
 @router.post(
     "/login",
-    response_model=LoginOutputSchema,
+    response_model=AuthOutputSchema,
     status_code=200,
 )
 @limiter.limit("5/minute")
@@ -53,8 +52,12 @@ async def login(
 
     access_token = jwt_manager.create_access_token(user_id=user_id)
     refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
+
+    # The tokens only ever leave through HttpOnly cookies. Returning them in the
+    # body too would hand them straight back to any script on the page and
+    # undo the reason for making the cookies HttpOnly in the first place.
     set_auth_cookies(response, access_token, refresh_token)
-    return LoginOutputSchema(access_token=access_token, refresh_token=refresh_token)
+    return AuthOutputSchema(msg="Login successfully")
 
 
 @router.post(
@@ -72,7 +75,7 @@ async def logout(
 
 @router.get(
     "/refresh",
-    response_model=LoginOutputSchema,
+    response_model=AuthOutputSchema,
     status_code=200,
 )
 async def refresh(
@@ -84,4 +87,4 @@ async def refresh(
     refresh_token = JwtManager.create_refresh_token(user_id=user_id)
 
     set_auth_cookies(response, access_token, refresh_token)
-    return LoginOutputSchema(access_token=access_token, refresh_token=refresh_token)
+    return AuthOutputSchema(msg="Token refreshed successfully")
