@@ -37,7 +37,7 @@ class RequestsService(IRequestsService):
 
     async def _validate_if_exists(self, user_id: int, project_id: int) -> None:
         request = await self.requests_repository.get_request_by_user_id_and_project_id(user_id, project_id)
-        if request:
+        if request and request.status in (RequestStatus.PENDING, RequestStatus.APPROVED):
             raise RequestAlreadyExists()
 
     async def create_request(
@@ -75,13 +75,13 @@ class RequestsService(IRequestsService):
         if request.status != RequestStatus.PENDING:
             raise RequestAlreadyRespondedError()
 
-        project = await self.project_authorization_service.require_project_owner(user_id, request.project_id)
+        await self.project_authorization_service.require_project_owner(user_id, request.project_id)
 
         if accepted:
             request.status = RequestStatus.APPROVED
             await self.collaborator_service.add_member_to_project(
                 id_user=request.user_id,
-                id_project=project.id,
+                id_project=request.project_id,
                 role=request.role
             )
         else:
