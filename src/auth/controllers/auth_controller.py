@@ -53,9 +53,6 @@ async def login(
     access_token = jwt_manager.create_access_token(user_id=user_id)
     refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
 
-    # The tokens only ever leave through HttpOnly cookies. Returning them in the
-    # body too would hand them straight back to any script on the page and
-    # undo the reason for making the cookies HttpOnly in the first place.
     set_auth_cookies(response, access_token, refresh_token)
     return AuthOutputSchema(msg="Login successfully")
 
