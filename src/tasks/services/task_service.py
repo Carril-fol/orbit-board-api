@@ -116,7 +116,14 @@ class TaskService(ITaskService):
         await self.collaborator_service.require_project_member(user_id, task.project_id)
         return DetailTaskOutputSchema.model_validate(task)
 
-    async def get_tasks_by_project(self, user_id: int, project_id: int, status: str = None, priority: str = None, filter_user_id: int = None) -> ListDetailTaskOutputSchema:
+    async def get_tasks_by_project(
+        self, 
+        user_id: int, 
+        project_id: int, 
+        status: str = None, 
+        priority: str = None, 
+        filter_user_id: int = None
+    ) -> ListDetailTaskOutputSchema:
         await self.collaborator_service.require_project_member(int(user_id), project_id)
 
         tasks_raw = await self.repo.get_tasks_by_project(
@@ -131,16 +138,3 @@ class TaskService(ITaskService):
     async def get_tasks_from_user(self, user_id: int, project_id: int):
         tasks = await self.repo.get_tasks_from_project_from_user(user_id, project_id)
         return self._format_tasks(tasks)
-
-    async def get_tasks_by_priority(self, priority: str):
-        tasks = await self.repo.get_tasks_with_priority(priority.upper())
-        return self._format_tasks(tasks)
-
-    async def get_tasks_by_title_or_description(self, search_term: str):
-        tasks = await self.repo.get_tasks_by_title_or_description(search_term)
-        return self._format_tasks(tasks)
-
-    async def get_tasks_by_status(self, status: str):
-        tasks = await self.repo.get_tasks_by_status(status.upper())
-        return self._format_tasks(tasks)
-    

@@ -112,19 +112,3 @@ async def update_task(
     await service.update_task(task_id, data, user_id)
     return TaskOutputSchema(msg="Task updated")
 
-
-@router.get(
-    "/get/search/{search_term}",
-    response_model=ListDetailTaskOutputSchema,
-    status_code=200,
-)
-@limiter.limit("10/minute")
-async def get_tasks_by_title_or_description(
-    request: Request,
-    search_term: str,
-    service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
-):
-    tasks = await service.get_tasks_by_title_or_description(search_term)
-    return tasks
-

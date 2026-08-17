@@ -49,31 +49,6 @@ class TaskRepository(BaseRepository[Task]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_tasks_with_priority(self, priority: str):
-        stmt = select(self.model).options(LOAD_SUBTASKS).where(
-            self.model.priority == priority,
-            self.model.deleted_at.is_(None)
-        )
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
-
-    async def get_tasks_by_title_or_description(self, search_term: str):
-        stmt = select(self.model).options(LOAD_SUBTASKS).where(
-            (self.model.title.ilike(f"%{search_term}%")) |
-            (self.model.description.ilike(f"%{search_term}%")),
-            self.model.deleted_at.is_(None)
-        )
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
-
-    async def get_tasks_by_status(self, status: str):
-        stmt = select(self.model).options(LOAD_SUBTASKS).where(
-            self.model.status == status,
-            self.model.deleted_at.is_(None)
-        )
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
-
     async def get_tasks_by_status_and_priority_from_project(self, status: str, priority: str, project_id: int):
         stmt = select(self.model).options(LOAD_SUBTASKS).where(
             self.model.status == status,

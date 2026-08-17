@@ -47,18 +47,6 @@ class ITaskService(ABC):
     async def get_tasks_from_user(self, user_id: int, project_id: int) -> ListDetailTaskOutputSchema:
         pass
 
-    @abstractmethod
-    async def get_tasks_by_priority(self, priority: str) -> ListDetailTaskOutputSchema:
-        pass
-
-    @abstractmethod
-    async def get_tasks_by_status(self, status: str) -> ListDetailTaskOutputSchema:
-        pass
-
-    @abstractmethod
-    async def get_tasks_by_title_or_description(self, search_term: str) -> ListDetailTaskOutputSchema:
-        pass
-
 
 class ITaskUserService(ABC):
 
