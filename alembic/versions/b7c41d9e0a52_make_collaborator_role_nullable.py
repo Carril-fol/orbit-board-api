@@ -29,14 +29,10 @@ def upgrade() -> None:
         existing_type=sa.String(length=100),
         nullable=True,
     )
-    # "OWNER" was an authorization value living in a descriptive column. Nothing
-    # reads it anymore, so clear it instead of leaving a role nobody assigned.
     op.execute("UPDATE collaborators SET role = NULL WHERE role = 'OWNER'")
 
 
 def downgrade() -> None:
-    # Restore the marker for the rows that own their project, so the NOT NULL
-    # constraint can be put back without inventing a role for anyone else.
     op.execute(
         """
         UPDATE collaborators AS c

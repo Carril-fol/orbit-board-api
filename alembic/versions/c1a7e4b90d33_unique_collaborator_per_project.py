@@ -45,5 +45,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # The deleted duplicates are not recoverable, so this only lifts the rule.
     op.drop_constraint(CONSTRAINT_NAME, "collaborators", type_="unique")
