@@ -40,8 +40,6 @@ def create_app() -> FastAPI:
         },
         docs_url="/docs",
         swagger_ui_parameters={
-            # Send cookies with "Try it out" requests even when the docs are opened
-            # from a different origin than the API.
             "withCredentials": True,
             "persistAuthorization": True,
         },
