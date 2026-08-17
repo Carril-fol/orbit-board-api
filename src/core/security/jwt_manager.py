@@ -87,8 +87,25 @@ def clear_auth_cookies(response) -> None:
         )
 
 
-access_token_cookie = APIKeyCookie(name="access_token", auto_error=False)
-refresh_token_cookie = APIKeyCookie(name="refresh_token", auto_error=False)
+_COOKIE_AUTH_DESCRIPTION = (
+    "Authentication travels in an **HttpOnly cookie**, so this field cannot set it: "
+    "browsers do not let scripts write the `Cookie` header. "
+    "Call `POST /auth/api/v1/login` right here in the docs instead — the browser "
+    "stores the cookie and attaches it to every later request from this page."
+)
+
+access_token_cookie = APIKeyCookie(
+    name="access_token",
+    scheme_name="AccessTokenCookie",
+    description=_COOKIE_AUTH_DESCRIPTION,
+    auto_error=False,
+)
+refresh_token_cookie = APIKeyCookie(
+    name="refresh_token",
+    scheme_name="RefreshTokenCookie",
+    description=_COOKIE_AUTH_DESCRIPTION,
+    auto_error=False,
+)
 
 
 def get_access_token_from_cookie(token: str = Depends(access_token_cookie)) -> str:

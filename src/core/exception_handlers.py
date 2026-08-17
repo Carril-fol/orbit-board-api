@@ -4,10 +4,11 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 
-from projects.exceptions.project_exception import (
+from projects.exceptions import (
     ProjectAlreadyHasStatus,
     ProjectInsufficientPrivileges,
     ProjectNotFoundError,
+    ProjectIsFull
 )
 from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
 from collaborators.exceptions import (
@@ -37,9 +38,7 @@ from project_invitations.exceptions import (
     ProjectInvitationPermissionError,
     ProjectInvitationAlreadyExistsError,
     ProjectInvitationNotFoundError,
-    ProjectInvitationAlreadyResponded,
-    ProjectInvitationNotAllowCollaborators,
-    ProjectInvitationIsAlreadyFull
+    ProjectInvitationAlreadyResponded
 )
 from requests.exceptions import (
     RequestCollaboratorAlreadyExists,
@@ -71,14 +70,6 @@ def register_invitation_exception_handlers(app):
     async def already_responded_handler(request: Request, exc: ProjectInvitationAlreadyResponded):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-    @app.exception_handler(ProjectInvitationNotAllowCollaborators)
-    async def not_allow_collaborators_handler(request: Request, exc: ProjectInvitationNotAllowCollaborators):
-        return JSONResponse(status_code=400, content={"detail": str(exc)})
-
-    @app.exception_handler(ProjectInvitationIsAlreadyFull)
-    async def is_already_full_handler(request: Request, exc: ProjectInvitationIsAlreadyFull):
-        return JSONResponse(status_code=400, content={"detail": str(exc)})
-
 
 def register_project_exception_handlers(app):
 
@@ -97,6 +88,12 @@ def register_project_exception_handlers(app):
         request: Request, exc: ProjectAlreadyHasStatus
     ):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
+    
+    @app.exception_handler(ProjectIsFull)
+    async def project_is_full_handler(
+        request: Request, exc: ProjectIsFull
+    ):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
 
 def register_request_exception_handlers(app):
@@ -132,6 +129,7 @@ def register_request_exception_handlers(app):
         request: Request, exc: RequestAlreadyRespondedError
     ):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 
 def register_project_tag_exception_handlers(app):
@@ -184,7 +182,6 @@ def register_collaborators_exception_handlers(app):
     ):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
 
-    # 409 to match RequestCollaboratorAlreadyExists: same "already there" shape.
     @app.exception_handler(CollaboratorAlreadyExists)
     async def collaborator_already_exists_handler(
         request: Request, exc: CollaboratorAlreadyExists
