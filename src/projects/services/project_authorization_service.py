@@ -1,8 +1,9 @@
 from ..interfaces import IProjectAuthorizationService
 
-from ..exceptions.project_exception import (
+from ..exceptions import (
     ProjectInsufficientPrivileges,
     ProjectNotFoundError,
+    ProjectIsFull
 )
 from ..models.project import Project
 from ..repositories.project_repository import ProjectRepository
@@ -23,3 +24,11 @@ class ProjectAuthorizationService(IProjectAuthorizationService):
             raise ProjectInsufficientPrivileges()
 
         return project
+
+    async def require_capacity_for(self, project_id: int, current_members: int) -> None:
+        project = await self.project_repo.get_project_by_id(project_id)
+        if not project:
+            raise ProjectNotFoundError()
+        
+        if current_members >= project.max_collaborators:
+            raise ProjectIsFull()

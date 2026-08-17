@@ -1,7 +1,7 @@
 from collaborators.interfaces import ICollaboratorService
 from ..interfaces import IProjectService, IProjectAuthorizationService
 
-from ..exceptions.project_exception import (
+from ..exceptions import (
     ProjectAlreadyHasStatus,
     ProjectInsufficientPrivileges,
     ProjectNotFoundError,
@@ -73,7 +73,7 @@ class ProjectService(IProjectService):
     async def delete_project(self, id: int, user_id: int, data: dict):
         project: Project = await self.project_authorization_service.require_project_owner(user_id, id)
 
-        if project.status == "CANCELLED":
+        if project.status == "CANCELED":
             raise ProjectAlreadyHasStatus()
 
         for field, value in data.items():

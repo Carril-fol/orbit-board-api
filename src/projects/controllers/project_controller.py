@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from core.security.jwt_manager import jwt_required
 from shared.extensions import limiter
@@ -74,7 +74,7 @@ async def delete_project(
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
-    data = {"status": "CANCELLED"}
+    data = {"status": "CANCELED"}
     await service.delete_project(id, user_id, data)
     return DeleteProjectOutputSchema(msg="Project deleted successfully")
 
@@ -83,8 +83,8 @@ async def delete_project(
 @limiter.limit("5/minute")
 async def get_all_project(
     request: Request,
-    per_page: int = 10,
-    page: int = 1,
+    per_page: int = Query(10, ge=1, le=100, description="Projects per page."),
+    page: int = Query(1, ge=1, description="1-indexed page number."),
     service: IProjectService = Depends(get_project_service),
     payload: dict = Depends(jwt_required),
 ):
