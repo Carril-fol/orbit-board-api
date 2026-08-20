@@ -70,7 +70,7 @@ async def logout(
     return AuthOutputSchema(msg="Logout successfully")
 
 
-@router.get(
+@router.post(
     "/refresh",
     response_model=AuthOutputSchema,
     status_code=200,
