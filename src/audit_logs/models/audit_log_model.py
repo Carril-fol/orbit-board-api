@@ -15,11 +15,12 @@ class AuditLog(Base):
         autoincrement=True,
     )
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    old_value: Mapped[dict | None] = mapped_column(JSON, nullable=False)
-    new_value: Mapped[dict | None] = mapped_column(JSON, nullable=False)
+    old_value: Mapped[dict] = mapped_column(JSON, nullable=False)
+    new_value: Mapped[dict] = mapped_column(JSON, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
