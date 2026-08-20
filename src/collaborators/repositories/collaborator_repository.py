@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from users.models.user import User
@@ -25,6 +25,15 @@ class CollaboratorRepository(BaseRepository[Collaborators]):
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
+
+    async def count_collaborators_from_project(self, id_project: int) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Collaborators)
+            .where(Collaborators.id_project == id_project)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
 
     async def get_collaborator_by_user_id(self, user_id: int):
         stmt = select(Collaborators).where(Collaborators.id_user == user_id)

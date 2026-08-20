@@ -9,7 +9,7 @@ from .schemas.collaborators_schema import (
 class ICollaboratorService(ABC):
 
     @abstractmethod
-    async def add_member_to_project(self, id_user: int, id_project: int, role: str):
+    async def add_member_to_project(self, id_user: int, id_project: int, role: str, actor_id: int):
         pass
 
     @abstractmethod
@@ -30,6 +30,10 @@ class ICollaboratorService(ABC):
 
     @abstractmethod
     async def count_project_collaborators(self, project_id: int) -> int:
+        pass
+
+    @abstractmethod
+    async def get_project_ids_for_user(self, user_id: int) -> list[int]:
         pass
 
     @abstractmethod

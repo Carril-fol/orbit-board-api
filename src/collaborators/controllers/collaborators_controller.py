@@ -12,10 +12,11 @@ from ..schemas.collaborators_schema import (
 from ..interfaces import ICollaboratorService
 
 router = APIRouter(prefix="/collaborators/api/v1", tags=["Collaborators"])
+project_collaborators_router = APIRouter(prefix="/projects/api/v1", tags=["Collaborators"])
 
 
-@router.get(
-    "/get/{project_id}",
+@project_collaborators_router.get(
+    "/{project_id}/collaborators",
     response_model=ListDetailCollaboratorsSchema,
     status_code=200,
 )
@@ -31,25 +32,25 @@ async def get_collaborators(
 
 
 @router.delete(
-    "/delete/{id_collaborator}",
+    "/{collaborator_id}",
     response_model=CollaboratorsOutputSchema,
     status_code=200,
 )
 @limiter.limit("10/minute")
 async def remove_collaborator(
     request: Request,
-    id_collaborator: int,
+    collaborator_id: int,
     service: ICollaboratorService = Depends(get_collaborators_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
 
-    await service.remove_collaborator(id_collaborator, user_id)
+    await service.remove_collaborator(collaborator_id, user_id)
     return CollaboratorsOutputSchema(msg="Collaborator removed")
 
 
-@router.put(
-    "/update-role/{collaborator_id}",
+@router.patch(
+    "/{collaborator_id}",
     response_model=CollaboratorsOutputSchema,
     status_code=200,
 )
