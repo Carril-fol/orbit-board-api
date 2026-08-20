@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -75,8 +76,7 @@ class DetailRequestSchema(BaseModel):
     project_id: int = Field(..., description="The unique identifier of the project.", examples=[1])
     user_id: int = Field(..., description="The unique identifier of the user.", examples=[10])
     status: RequestStatus = Field(..., description="The current status of the request.", examples=[RequestStatus.PENDING])
-
-    model_config = ConfigDict(from_attributes=True)
+    review_at: Optional[datetime] = Field(None, description="When the owner answered the request, or null while it is pending.")
 
 
 class ListDetailRequestSchema(BaseModel):
@@ -84,6 +84,28 @@ class ListDetailRequestSchema(BaseModel):
     Schema for returning a list of access requests.
     """
     requests: list[DetailRequestSchema] = Field(..., description="List of request details.")
+
+
+class SentRequestSchema(BaseModel):
+    """
+    Schema for an access request submitted by the authenticated user.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="Unique identifier of the request.", examples=[1])
+    project_id: int = Field(..., description="The project the user asked to join.", examples=[1])
+    role: str = Field(..., description="The role the user asked for.", examples=["MEMBER"])
+    message: Optional[str] = Field(None, description="The message sent with the request.", examples=["I want to help."])
+    status: RequestStatus = Field(..., description="The current status of the request.", examples=[RequestStatus.PENDING])
+    created_at: datetime = Field(..., description="When the request was submitted.")
+    review_at: Optional[datetime] = Field(None, description="When the owner answered the request, or null while it is pending.")
+
+
+class ListSentRequestSchema(BaseModel):
+    """
+    Schema for returning the access requests submitted by the authenticated user.
+    """
+    requests: list[SentRequestSchema] = Field(..., description="Requests submitted by the user, newest first.")
 
 
 class RequestOutputSchema(BaseModel):

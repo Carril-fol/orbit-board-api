@@ -19,6 +19,15 @@ class RequestsRepository(BaseRepository[Request]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
+    async def get_requests_by_user_id(self, user_id: int) -> list[Request]:
+        stmt = (
+            select(Request)
+            .where(Request.user_id == user_id)
+            .order_by(Request.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
     async def get_request_by_user_id_and_project_id(
         self, user_id: int, project_id: int
     ) -> Request | None:
