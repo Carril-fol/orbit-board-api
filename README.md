@@ -2,12 +2,11 @@
 
 Orbit Board is a project management API designed to eliminate friction in collaboration. Users create projects, grow a team through invitations or join requests, and organise the work as hierarchical tasks with assignees and comments. Every relevant change is recorded in an audit trail.
 
-Built with FastAPI on a fully asynchronous stack: SQLAlchemy 2.0 async and asyncpg over PostgreSQL.
-
 ## ✨ Features
 
-*   **Workspace Management**: Control over the creation, configuration, and management of your personal projects.
+*   **Workspace Management**: Control over the creation and management of your personal projects.
 *   **Open Collaboration System**: Two ways to grow a team — the owner sends invitations, or a user sends a join request the owner approves or declines.
+*   **Publishing**: A project starts `PRIVATE`, readable only by its members. Publishing it (`PUBLIC`) lists it on the open board for any signed-in user to find and ask to join. A private project answers `404` rather than `403`, so its existence does not leak.
 *   **Hierarchical Planning**: Task management with subtask support, allowing complex objectives to be broken down into simpler subtasks. A task's progress is derived from how many of its subtasks are done.
 *   **Task Assignment**: The project owner assigns and unassigns collaborators on individual tasks.
 *   **Full Traceability**: Every change is stored as a diff between the previous and the new state. Actions that are not field changes — assigning a user, deleting a task — are stored as events with their full payload.
@@ -20,7 +19,7 @@ Built with FastAPI on a fully asynchronous stack: SQLAlchemy 2.0 async and async
 *   **Migrations:** Alembic
 *   **Auth:** JWT in HttpOnly cookies, Argon2 password hashing (`pwdlib`)
 *   **Dependency Management:** [uv](https://github.com/astral-sh/uv)
-*   **Caching & Rate Limiting:** Redis, `fastapi-cache2`, `slowapi`
+*   **Rate Limiting:** `slowapi`
 *   **Containerization:** Docker (multi-stage build)
 
 ## 🏗️ Architecture
@@ -51,7 +50,6 @@ Follow this steps to configure the project locally
 *   [uv](https://github.com/astral-sh/uv)
 *   Git
 *   A PostgreSQL database — the project targets [Neon](https://neon.tech), any PostgreSQL works
-*   Redis (optional; needed for caching and rate limiting)
 
 ### Installation
 
@@ -80,8 +78,7 @@ Follow this steps to configure the project locally
 | `ENV` | no | `development` (default) or `production`. Selects the settings class. |
 | `NEON_DATABASE_URL` | **yes** | Connection string, e.g. `postgresql+asyncpg://user:pass@host/db`. Neon's `sslmode` and `channel_binding` parameters are translated for asyncpg automatically. |
 | `SECRET_KEY` | **yes** | Key used to sign JWTs. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(32))"`. |
-| `JWT_SECRET_KEY` | **yes** | Required by the settings class, but not read by any code yet — see Known limitations. |
-| `REDIS_URL` | no | Redis connection string, for caching and rate limiting. |
+| `CORS_ORIGINS` | in production | Browser origins allowed to call the API, comma-separated (`https://app.example.com,https://admin.example.com`). Empty means no browser origin is allowed — the API authenticates with cookies, so there is no safe wildcard. Development defaults to `localhost:3000` and `localhost:5173`. |
 | `SERVER_HOST` | no | Defaults to `0.0.0.0`. |
 | `SERVER_PORT` | no | Defaults to `8000`. |
 
@@ -105,7 +102,7 @@ docker build -t orbit-board-api .
 docker run --env-file .env -p 8000:8000 orbit-board-api
 ```
 
-The image is multi-stage: dependencies are resolved in a builder stage, and only the virtualenv and the application code land in the final image.
+The image is multi-stage: dependencies are resolved in a builder stage, and only the virtualenv and the application code land in the final image. It runs as an unprivileged user and declares a `HEALTHCHECK` against `/health`.
 
 ### Migrations
 
@@ -117,19 +114,24 @@ uv run alembic history                     # see the history
 
 ## 📡 API Overview
 
-All routes are prefixed `/<resource>/api/v1`. Authentication is a JWT cookie, set on login and rotated on refresh.
+Routes follow REST: the HTTP method carries the verb, so the path only names resources. Sub-resources are nested under the resource that owns them (`/projects/api/v1/{id}/tasks`), while operations on a single entity live under its own prefix (`/tasks/api/v1/{id}`). Authentication is a JWT cookie, set on login and rotated on refresh. `GET /health` sits outside every prefix, for container health checks.
+
 
 | Resource | Endpoints |
 |---|---|
-| **Auth** | `POST /register`, `POST /login`, `POST /logout`, `GET /refresh` |
-| **Projects** | `GET /`, `POST /create`, `GET /get/{id}`, `PATCH /update/{id}`, `DELETE /delete/{id}` |
-| **Tasks** | `POST /create/{project_id}`, `GET /get/all/{project_id}`, `GET /get/{task_id}`, `GET /get/search/{term}`, `PUT /update/{task_id}`, `DELETE /delete/{task_id}` |
-| **Task assignment** | `POST /{task_id}/users`, `DELETE /{task_id}/users/{user_id}` |
-| **Collaborators** | `GET /get/{project_id}`, `PUT /update-role/{id}`, `DELETE /delete/{id}` |
-| **Invitations** | `POST /create`, `POST /{token}/accept`, `POST /{token}/reject`, `DELETE /remove/{id}` |
-| **Join requests** | `POST /create/{project_id}`, `GET /all/{project_id}`, `GET /{request_id}`, `POST /approve/{id}`, `POST /decline/{id}` |
-| **Tags** | `POST /create/{project_id}`, `DELETE /delete/{id}` |
-| **Comments** | `POST /create/{task_id}`, `GET /get/all/{task_id}`, `GET /get/{id}`, `PUT /update/{id}`, `DELETE /delete/{id}` |
+| **Auth** | `POST /auth/api/v1/register`, `POST /auth/api/v1/login`, `POST /auth/api/v1/logout`, `POST /auth/api/v1/refresh` |
+| **Users** | `GET /users/api/v1/me` |
+| **Projects** | `POST /projects/api/v1/`, `GET /projects/api/v1/` (the open board), `GET /projects/api/v1/me`, `GET /projects/api/v1/{project_id}`, `PATCH /projects/api/v1/{project_id}`, `DELETE /projects/api/v1/{project_id}` |
+| **Tasks** | `POST /projects/api/v1/{project_id}/tasks`, `GET /projects/api/v1/{project_id}/tasks`, `GET /tasks/api/v1/{task_id}`, `PUT /tasks/api/v1/{task_id}`, `DELETE /tasks/api/v1/{task_id}` |
+| **Task assignment** | `POST /tasks/api/v1/{task_id}/users`, `DELETE /tasks/api/v1/{task_id}/users/{user_id}` |
+| **Comments** | `POST /tasks/api/v1/{task_id}/comments`, `GET /tasks/api/v1/{task_id}/comments`, `GET /comments/api/v1/{comment_id}`, `PUT /comments/api/v1/{comment_id}`, `DELETE /comments/api/v1/{comment_id}` |
+| **Collaborators** | `GET /projects/api/v1/{project_id}/collaborators`, `PATCH /collaborators/api/v1/{collaborator_id}`, `DELETE /collaborators/api/v1/{collaborator_id}` |
+| **Invitations** | `POST /invitations/api/v1/`, `GET /invitations/api/v1/received`, `POST /invitations/api/v1/{token}/accept`, `POST /invitations/api/v1/{token}/reject`, `DELETE /invitations/api/v1/{invitation_id}` |
+| **Join requests** | `POST /projects/api/v1/{project_id}/requests`, `GET /projects/api/v1/{project_id}/requests`, `GET /requests/api/v1/sent`, `GET /requests/api/v1/{request_id}`, `POST /requests/api/v1/{request_id}/approve`, `POST /requests/api/v1/{request_id}/decline` |
+| **Tags** | `POST /projects/api/v1/{project_id}/tags`, `DELETE /project-tags/api/v1/{tag_id}` |
+| **Audit trail** | `GET /projects/api/v1/{project_id}/audit-logs` |
+
+Reading a project depends on its `visibility`. A `PUBLIC` project is listed on the open board (`GET /projects/api/v1/`) and readable by any signed-in user. A `PRIVATE` one is readable only by its owner and collaborators; everyone else gets `404`, not `403`, so the board's existence stays private too. `GET /projects/api/v1/me` always returns your own projects, published or not.
 
 The full contract, with request and response schemas, is at `/docs`.
 
@@ -148,16 +150,15 @@ curl -X POST localhost:8000/auth/api/v1/login -c cookies.txt \
   -d '{"email":"ada@example.com","password":"a-strong-password"}'
 
 # 2. Create a project
-curl -X POST localhost:8000/projects/api/v1/create -b cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Orbit","description":"Ship the thing","status":"ACTIVE","max_collaborators":5}'
+curl -X POST localhost:8000/projects/api/v1/ -b cookies.txt   -H "Content-Type: application/json"   -d '{"name":"Orbit","description":"Ship the thing","status":"ACTIVE","max_collaborators":5,"visibility":"PUBLIC"}'
 
 # 3. Add a task to it
-curl -X POST localhost:8000/tasks/api/v1/create/1 -b cookies.txt \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Design the schema","status":"TO DO","priority":"HIGH"}'
+curl -X POST localhost:8000/projects/api/v1/1/tasks -b cookies.txt   -H "Content-Type: application/json"   -d '{"title":"Design the schema","status":"TO DO","priority":"HIGH"}'
 
 # 4. Read the project's tasks, with their subtasks and progress
-curl localhost:8000/tasks/api/v1/get/all/1 -b cookies.txt
+curl localhost:8000/projects/api/v1/1/tasks -b cookies.txt
+
+# 5. See everything that happened in the project
+curl localhost:8000/projects/api/v1/1/audit-logs -b cookies.txt
 ```
 
