@@ -1,4 +1,5 @@
 from ..models.user import User
+from ..exceptions import UserNotFound
 from ..interfaces import IUserService
 from ..repositories.user_repository import UserRepository
 from ..schemas.user_schema import  UserCreateSchema
@@ -20,9 +21,12 @@ class UserService(IUserService):
         user_entity = User(**user_create.model_dump())
         return await self.user_repo.create(user_entity)
     
+    async def get_user_by_id(self, user_id: int) -> User:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise UserNotFound()
+        return user
+
     async def get_user_by_email(self, email: str) -> User:
         user = await self.user_repo.get_user_by_email(email)
         return user
-    
-    async def delete_user(self, user_id: int):
-        return await self.user_repo.delete(user_id)

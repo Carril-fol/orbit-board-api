@@ -10,7 +10,6 @@ class UserResponse(BaseModel):
     last_name: str = Field(..., description="User's last name.", examples=["Doe"])
     username: str = Field(..., description="Unique username of the user.", examples=["johndoe123"])
     email: str = Field(..., description="User's email address.", examples=["john.doe@example.com"])
-    password: str = Field(..., description="User's password", examples=["Supersecure123-"])
     
     model_config = ConfigDict(from_attributes=True)
         
@@ -52,11 +51,3 @@ class UserCreateSchema(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp indicating when the user was last updated.",
     )
-    
-    @field_validator("first_name", "last_name", "username", mode="before")
-    @classmethod
-    def convert_to_uppercase(cls, value: str) -> str:
-        if isinstance(value, str):
-            return value.upper()
-
-        return value
