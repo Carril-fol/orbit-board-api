@@ -1,5 +1,6 @@
 from tasks.interfaces import ITaskService
 from collaborators.interfaces import ICollaboratorService
+from audit_logs.interfaces import IAuditLogService
 
 from ..interfaces import ICommentService
 from ..models.comment_model import Comment
@@ -22,10 +23,12 @@ class CommentService(ICommentService):
         self, 
         comment_repository: CommentRepository,
         collaborator_service: ICollaboratorService,
+        audit_log_service: IAuditLogService,
         task_service: ITaskService
     ):
         self.comment_repository = comment_repository
         self.collaborator_service = collaborator_service
+        self.audit_log_service = audit_log_service
         self.task_service = task_service
 
     def _format_comments(self, comments: list[Comment]) -> ListDetailCommentOutputSchema:
@@ -52,7 +55,16 @@ class CommentService(ICommentService):
         })
         comment_entity = Comment(**create_comment_input.model_dump())
         
-        await self.comment_repository.create(comment_entity)
+        comment_created = await self.comment_repository.create(comment_entity)
+
+        await self.audit_log_service.record_event(
+            user_id=user_id,
+            project_id=task.project_id,
+            entity_type="Comment",
+            entity_id=comment_created.id,
+            action="create_comment",
+            data=comment_created.to_dict(),
+        )
 
     async def update_comment(self, data: UpdateCommentSchema, user_id: int, comment_id: int):
         comment = await self._get_comment(comment_id)
@@ -63,10 +75,24 @@ class CommentService(ICommentService):
         task = await self.task_service.get_task_or_raise(comment.task_id)
         await self.collaborator_service.require_project_member(user_id, task.project_id)
 
+        old_state = comment.to_dict()
+
         for key, value in data.model_dump().items():
             setattr(comment, key, value)
 
+        new_state = comment.to_dict()
+
         await self.comment_repository.update(comment)
+
+        await self.audit_log_service.record_diff(
+            user_id=user_id,
+            project_id=task.project_id,
+            entity_type="Comment",
+            entity_id=comment.id,
+            action="update_comment",
+            old_state=old_state,
+            new_state=new_state,
+        )
         
     async def delete_comment(self, comment_id: int, user_id: int) -> None:
         comment = await self._get_comment(comment_id)
@@ -77,7 +103,18 @@ class CommentService(ICommentService):
         task = await self.task_service.get_task_or_raise(comment.task_id)
         await self.collaborator_service.require_project_member(user_id, task.project_id)
 
+        deleted_state = comment.to_dict()
+
         await self.comment_repository.delete(comment.id)
+
+        await self.audit_log_service.record_event(
+            user_id=user_id,
+            project_id=task.project_id,
+            entity_type="Comment",
+            entity_id=deleted_state["id"],
+            action="delete_comment",
+            data=deleted_state,
+        )
         
     async def get_comments_by_task_id(self, task_id: int, user_id: int, limit: int = 20, offset: int = 0) -> ListDetailCommentOutputSchema:
         if not await self.comment_repository.verify_user_access_to_task(user_id, task_id):

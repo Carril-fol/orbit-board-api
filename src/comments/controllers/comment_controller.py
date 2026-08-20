@@ -14,10 +14,11 @@ from ..schemas.comment_schema import (
 )
 
 router = APIRouter(prefix="/comments/api/v1", tags=["Comments"])
+task_comments_router = APIRouter(prefix="/tasks/api/v1", tags=["Comments"])
 
 
-@router.post(
-    "/create/{task_id}",
+@task_comments_router.post(
+    "/{task_id}/comments",
     response_model=CommentOutputSchema,
     status_code=201,
 )
@@ -35,7 +36,7 @@ async def create_comment(
 
 
 @router.get(
-    "/get/{comment_id}",
+    "/{comment_id}",
     response_model=DetailCommentOutputSchema,
     status_code=200
 )
@@ -51,8 +52,8 @@ async def get_comment(
     return comment
 
 
-@router.get(
-    "/get/all/{task_id}",
+@task_comments_router.get(
+    "/{task_id}/comments",
     response_model=ListDetailCommentOutputSchema,
     status_code=200
 )
@@ -71,7 +72,7 @@ async def get_comment_from_tasks(
 
 
 @router.put(
-    "/update/{comment_id}",
+    "/{comment_id}",
     response_model=CommentOutputSchema,
     status_code=200
 )
@@ -89,7 +90,7 @@ async def update_comment(
 
 
 @router.delete(
-    "/delete/{comment_id}",
+    "/{comment_id}",
     response_model=CommentOutputSchema,
     status_code=200
 )

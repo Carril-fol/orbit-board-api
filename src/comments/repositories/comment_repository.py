@@ -1,6 +1,5 @@
 from sqlalchemy import select, func, exists
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from shared.database.base_repository import BaseRepository
 from ..models.comment_model import Comment
