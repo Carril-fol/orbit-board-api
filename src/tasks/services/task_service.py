@@ -44,7 +44,7 @@ class TaskService(ITaskService):
 
     async def get_task_or_raise(self, task_id: int) -> Task:
         task = await self.repo.get_by_id(task_id)
-        if not task:
+        if not task or task.deleted_at != None:
             raise TaskNotFound()
         return task
 
@@ -76,6 +76,7 @@ class TaskService(ITaskService):
 
         await self.audit_log_service.record_event(
             user_id=user_id,
+            project_id=task.project_id,
             entity_type="Task",
             entity_id=task.id,
             action="delete_task",
@@ -99,12 +100,13 @@ class TaskService(ITaskService):
         new_state = task.to_dict()
         
         await self.audit_log_service.record_diff(
-            user_id,
-            "Task",
-            task.id,
-            "update_task",
-            old_state,
-            new_state
+            user_id=user_id,
+            project_id=task.project_id,
+            entity_type="Task",
+            entity_id=task.id,
+            action="update_task",
+            old_state=old_state,
+            new_state=new_state,
         )
         
         await self.repo.update(task)
@@ -124,7 +126,7 @@ class TaskService(ITaskService):
         priority: str = None, 
         filter_user_id: int = None
     ) -> ListDetailTaskOutputSchema:
-        await self.collaborator_service.require_project_member(int(user_id), project_id)
+        await self.collaborator_service.require_project_member(user_id, project_id)
 
         tasks_raw = await self.repo.get_tasks_by_project(
             project_id=project_id,

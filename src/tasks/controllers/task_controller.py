@@ -15,10 +15,11 @@ from ..schemas.task_schemas import (
 )
 
 router = APIRouter(prefix="/tasks/api/v1", tags=["Tasks"])
+project_tasks_router = APIRouter(prefix="/projects/api/v1", tags=["Tasks"])
 
 
-@router.post(
-    "/create/{project_id}",
+@project_tasks_router.post(
+    "/{project_id}/tasks",
     response_model=TaskOutputSchema,
     status_code=201,
     summary="Create a new task",
@@ -38,7 +39,7 @@ async def create_task(
 
 
 @router.get(
-    "/get/{task_id}",
+    "/{task_id}",
     response_model=DetailTaskOutputSchema,
     status_code=200,
 )
@@ -54,8 +55,8 @@ async def get_task(
     return task
 
 
-@router.get(
-    "/get/all/{project_id}",
+@project_tasks_router.get(
+    "/{project_id}/tasks",
     response_model=ListDetailTaskOutputSchema,
     status_code=200,
 )
@@ -81,7 +82,7 @@ async def get_tasks(
 
 
 @router.delete(
-    "/delete/{task_id}",
+    "/{task_id}",
     response_model=TaskOutputSchema,
     status_code=200,
 )
@@ -97,7 +98,7 @@ async def delete_task(
 
 
 @router.put(
-    "/update/{task_id}",
+    "/{task_id}",
     response_model=TaskOutputSchema,
     status_code=200,
 )

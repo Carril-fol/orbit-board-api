@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from shared.database.base_repository import BaseRepository
 from ..models.task_model import Task, TaskStatus
@@ -17,7 +17,8 @@ class TaskRepository(BaseRepository[Task]):
 
     async def get_task_with_subtasks(self, task_id: int):
         stmt = select(self.model).options(LOAD_SUBTASKS).where(
-            self.model.id == task_id
+            self.model.id == task_id,
+            self.model.deleted_at.is_(None)
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -68,11 +69,11 @@ class TaskRepository(BaseRepository[Task]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def count_open_subtasks(self, task_id: int):
-        stmt = select(self.model).where(
+    async def count_open_subtasks(self, task_id: int) -> int:
+        stmt = select(func.count()).select_from(self.model).where(
             self.model.parent_id == task_id,
             self.model.status != TaskStatus.DONE,
             self.model.deleted_at.is_(None)
         )
         result = await self.db.execute(stmt)
-        return len(result.scalars().all())
+        return result.scalar_one()

@@ -66,6 +66,7 @@ class TaskUserService(ITaskUserService):
 
         await self.audit_log_service.record_event(
             user_id=actor_user_id,
+            project_id=task.project_id,
             entity_type="TaskUser",
             entity_id=task_id,
             action="assign_user",
@@ -97,6 +98,7 @@ class TaskUserService(ITaskUserService):
 
         await self.audit_log_service.record_event(
             user_id=actor_user_id,
+            project_id=task.project_id,
             entity_type="TaskUser",
             entity_id=task_id,
             action="unassign_user",

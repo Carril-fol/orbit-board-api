@@ -16,13 +16,6 @@ class TaskUserIsNotAnCollaborator(Exception):
 class TaskCannotCompleted(Exception):
     def __init__(self):
         super().__init__("Cannot complete task while subtasks are still open")
-
-
-class TaskUserNotAssigned(Exception):
-    def __init__(self):
-        super().__init__("User not assigned to task")
-
-
 class TaskUserAlreadyStatusAssigned(Exception):
     def __init__(self):
         super().__init__("The user already has this status assigned to the task")
