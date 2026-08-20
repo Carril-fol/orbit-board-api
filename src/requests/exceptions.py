@@ -14,7 +14,7 @@ class RequestAlreadyRespondedError(Exception):
 
 class RequestProjectNotFoundError(Exception):
     def __init__(self):
-        super().__init__("Project not found")
+        super().__init__("Project not found.")
 
 
 class RequestCollaboratorAlreadyExists(Exception):

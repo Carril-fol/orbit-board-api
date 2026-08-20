@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
-from .schemas.requests_schemas import RegisterRequestsInputSchema, DetailRequestSchema
+from .schemas.requests_schemas import (
+    DetailRequestSchema,
+    RegisterRequestsInputSchema,
+    SentRequestSchema,
+)
 
 class IRequestsService(ABC):
     @abstractmethod
@@ -16,4 +20,8 @@ class IRequestsService(ABC):
 
     @abstractmethod
     async def get_request(self, request_id: int, user_id: int) -> DetailRequestSchema:
+        pass
+
+    @abstractmethod
+    async def get_sent_requests(self, user_id: int) -> list[SentRequestSchema]:
         pass

@@ -12,6 +12,9 @@ from project_invitations.interfaces import IProjectInvitationService
 from projects.dependencies import get_project_service, get_project_authorization_service
 from projects.interfaces import IProjectService, IProjectAuthorizationService
 
+from audit_logs.dependencies import get_audit_log_service
+from audit_logs.interfaces import IAuditLogService
+
 from .interfaces import IRequestsService
 from .repositories.requests_repository import RequestsRepository
 from .services.requests_services import RequestsService
@@ -28,6 +31,7 @@ def get_requests_service(
     project_service: IProjectService = Depends(get_project_service),
     project_invitation_service: IProjectInvitationService = Depends(get_project_invitation_service),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
+    audit_log_service: IAuditLogService = Depends(get_audit_log_service),
     project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
 ) -> IRequestsService:
     return RequestsService(
@@ -35,5 +39,6 @@ def get_requests_service(
         project_service,
         project_invitation_service,
         collaborator_service,
+        audit_log_service,
         project_authorization_service,
     )
