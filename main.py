@@ -11,6 +11,7 @@ from core.exception_handlers import (
     register_tasks_exception_handlers,
     register_project_tag_exception_handlers,
     register_auth_exception_handlers,
+    register_user_exception_handlers,
     register_request_exception_handlers
 )
 from core.routers import register_routers
@@ -28,7 +29,7 @@ def create_app() -> FastAPI:
             "manage workflows through a system of hierarchical tasks and comments."
             "\n\n"
             "### Authentication\n"
-            "Tokens are delivered as **HttpOnly cookies**, never in the response body, "
+            "Tokens are delivered as **HttpOnly cookies**, "
             "so the *Authorize* button has nothing to type into. To use the protected "
             "endpoints from this page, run `POST /auth/api/v1/login` with **Try it out**: "
             "the browser keeps the cookie and sends it on every request you make from "
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     register_project_tag_exception_handlers(app)
     register_exception_handlers(app)
     register_auth_exception_handlers(app)
+    register_user_exception_handlers(app)
     register_request_exception_handlers(app)
 
     register_routers(app)
