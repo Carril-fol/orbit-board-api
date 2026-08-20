@@ -13,6 +13,3 @@ class ProjectTagRepository(BaseRepository[ProjectTag]):
         stmt = select(ProjectTag).where(ProjectTag.id == id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-
-    async def delete_logic(self, project_tag: ProjectTag) -> ProjectTag:
-        return await self.update(project_tag)

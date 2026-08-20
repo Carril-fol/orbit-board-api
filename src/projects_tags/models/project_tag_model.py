@@ -13,6 +13,6 @@ class ProjectTag(Base):
         autoincrement=True,
     )
     id_project: Mapped[int] = mapped_column(
-        Integer, ForeignKey("projects.id"), primary_key=True
+        Integer, ForeignKey("projects.id"), nullable=False
     )
     tag: Mapped[str] = mapped_column(String(100))
