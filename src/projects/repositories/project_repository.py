@@ -14,14 +14,37 @@ class ProjectRepository(BaseRepository[Project]):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_all_project(self, per_page: int, page: int) -> tuple[list[Project], int]:
-        count_stmt = select(func.count()).select_from(self.model).where(Project.status != "CANCELED")
-        total_result = await self.db.execute(count_stmt)
-        total = total_result.scalar()
+    async def get_projects_by_ids(self, project_ids: list[int], per_page: int, page: int) -> tuple[list[Project], int]:
+        if not project_ids:
+            return [], 0
 
-        stmt = select(self.model).where(Project.status != "CANCELED").offset((page - 1) * per_page).limit(per_page)
+        filters = (Project.id.in_(project_ids), Project.status != "CANCELED")
 
+        count_stmt = select(func.count()).select_from(self.model).where(*filters)
+        total = (await self.db.execute(count_stmt)).scalar()
+
+        stmt = (
+            select(self.model)
+            .where(*filters)
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
         result = await self.db.execute(stmt)
-        projects = result.scalars().all()
 
-        return projects, total
+        return result.scalars().all(), total
+
+    async def get_all_project(self, per_page: int, page: int) -> tuple[list[Project], int]:
+        filters = (Project.status != "CANCELED", Project.visibility == "PUBLIC")
+
+        count_stmt = select(func.count()).select_from(self.model).where(*filters)
+        total = (await self.db.execute(count_stmt)).scalar()
+
+        stmt = (
+            select(self.model)
+            .where(*filters)
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        result = await self.db.execute(stmt)
+
+        return result.scalars().all(), total

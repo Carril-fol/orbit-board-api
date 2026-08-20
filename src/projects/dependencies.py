@@ -3,6 +3,9 @@ from fastapi import Depends
 from collaborators.dependencies import get_collaborators_service
 from collaborators.interfaces import ICollaboratorService
 
+from audit_logs.dependencies import get_audit_log_service
+from audit_logs.interfaces import IAuditLogService
+
 from .authorization_dependencies import (
     get_project_repository,
     get_project_authorization_service,
@@ -15,6 +18,7 @@ from .interfaces import IProjectService, IProjectAuthorizationService
 def get_project_service(
     repo: ProjectRepository = Depends(get_project_repository),
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
+    audit_log_service: IAuditLogService = Depends(get_audit_log_service),
     project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service)
 ) -> IProjectService:
-    return ProjectService(repo, collaborator_service, project_authorization_service)
+    return ProjectService(repo, collaborator_service, audit_log_service, project_authorization_service)

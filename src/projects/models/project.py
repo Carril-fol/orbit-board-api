@@ -1,7 +1,14 @@
+from enum import Enum
+
 from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from shared.database import Base
+
+class ProjectVisibility(str, Enum):
+    PRIVATE = "PRIVATE"
+    PUBLIC = "PUBLIC"
 
 
 class Project(Base):
@@ -10,6 +17,12 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(20), default="active")
+    visibility: Mapped[str] = mapped_column(
+        String(20), 
+        default=ProjectVisibility.PRIVATE, 
+        server_default="PRIVATE", 
+        nullable=False
+    )
     max_collaborators: Mapped[int] = mapped_column(Integer)
 
     owner_id: Mapped[int] = mapped_column(

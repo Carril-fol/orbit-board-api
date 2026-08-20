@@ -30,7 +30,7 @@ class IProjectService(ABC):
         pass
 
     @abstractmethod
-    async def detail_project_by_id(self, id: int) -> ProjectDetail:
+    async def detail_project_by_id(self, id: int, user_id: int) -> ProjectDetail:
         pass
 
     @abstractmethod
@@ -38,9 +38,15 @@ class IProjectService(ABC):
         pass
 
     @abstractmethod
-    async def delete_project(self, id: int, user_id: int, data: dict):
+    async def delete_project(self, id: int, user_id: int):
         pass
 
     @abstractmethod
     async def get_all_project(self, per_page: int, page: int) -> ListProjectDetail:
+        pass
+
+    @abstractmethod
+    async def get_projects_for_user(
+        self, user_id: int, per_page: int, page: int
+    ) -> ListProjectDetail:
         pass

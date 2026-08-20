@@ -20,7 +20,7 @@ class ProjectAuthorizationService(IProjectAuthorizationService):
         if not project:
             raise ProjectNotFoundError()
 
-        if int(project.owner_id) != int(user_id):
+        if project.owner_id != user_id:
             raise ProjectInsufficientPrivileges()
 
         return project
