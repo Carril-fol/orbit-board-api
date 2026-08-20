@@ -26,7 +26,7 @@ class AuthService(IAuthService):
         if await self.user_service.get_user_by_email(data.email):
             raise AuthUserAlreadyExistWithThatEmail()
 
-        hashed_password = self.password_manager.hash(data.password)
+        hashed_password = await self.password_manager.hash(data.password)
         return await self.user_service.create_user(data, hashed_password)
 
     async def authenticate(self, data: LoginInputSchema):
@@ -34,7 +34,7 @@ class AuthService(IAuthService):
         if not user:
             raise InvalidCredentialsException()
 
-        if not self.password_manager.verify(data.password, user.password):
+        if not await self.password_manager.verify(data.password, user.password):
             raise InvalidCredentialsException()
 
         return user.id
