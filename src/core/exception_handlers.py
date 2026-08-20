@@ -40,6 +40,7 @@ from project_invitations.exceptions import (
     ProjectInvitationNotFoundError,
     ProjectInvitationAlreadyResponded
 )
+from users.exceptions import UserNotFound
 from requests.exceptions import (
     RequestCollaboratorAlreadyExists,
     RequestAlreadyExists,
@@ -51,6 +52,13 @@ from requests.exceptions import (
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def register_user_exception_handlers(app):
+
+    @app.exception_handler(UserNotFound)
+    async def user_not_found_handler(request: Request, exc: UserNotFound):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
 
 
 def register_invitation_exception_handlers(app):
