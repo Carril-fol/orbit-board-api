@@ -8,6 +8,7 @@ from ..dependencies import get_project_invitation_service
 from ..schemas.project_invitations_schemas import (
     CreateInvitationOutput,
     CreateProjectInvitation,
+    ListReceivedInvitationSchema,
     ProjectInvitationOutput,
 )
 
@@ -20,7 +21,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/create",
+    "/",
     response_model=CreateInvitationOutput,
     status_code=201,
 )
@@ -41,17 +42,33 @@ async def create_invitation(
     )
 
 
+@router.get(
+    "/received",
+    response_model=ListReceivedInvitationSchema,
+    status_code=200,
+    summary="Invitations waiting for the authenticated user",
+)
+@limiter.limit("20/minute")
+async def get_received_invitations(
+    request: Request,
+    service: IProjectInvitationService = Depends(get_project_invitation_service),
+    _payload: dict = Depends(jwt_required),
+):
+    user_id = _payload["sub"]
+    return await service.get_received_invitations(user_id)
+
+
 @router.delete(
-    "/remove/{id_invite}", response_model=ProjectInvitationOutput, status_code=200
+    "/{invitation_id}", response_model=ProjectInvitationOutput, status_code=200
 )
 async def remove_invitation(
-    id_invite: int,
+    invitation_id: int,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
     _payload: dict = Depends(jwt_required),
 ):
     user_id = _payload["sub"]
 
-    await service.remove_project_invitation(id_invite, user_id)
+    await service.remove_project_invitation(invitation_id, user_id)
     return ProjectInvitationOutput(msg="Invitation removed successfully.")
 
 

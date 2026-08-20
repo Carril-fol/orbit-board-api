@@ -1,4 +1,8 @@
-from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from ..models.project_invitation_model import InvitationStatus
 
 
 class ProjectInvitationBase(BaseModel):
@@ -40,6 +44,35 @@ class CreateInvitationOutput(BaseModel):
     token: str = Field(..., description="Secure token used to identify the invitation in the response URL.", examples=["abc123xyz789"])
     accept_url: str = Field(..., description="URL to accept the invitation.", examples=["https://api.example.com/invitations/accept?token=abc123xyz789"])
     reject_url: str = Field(..., description="URL to reject the invitation.", examples=["https://api.example.com/invitations/reject?token=abc123xyz789"])
+
+
+class ReceivedInvitationSchema(BaseModel):
+    """
+    Schema for an invitation addressed to the authenticated user.
+    """
+    id: int = Field(..., description="Unique identifier of the invitation.", examples=[50])
+    id_project: int = Field(..., description="The project the user is being invited to.", examples=[1])
+    id_inviter: int = Field(..., description="The user who sent the invitation.", examples=[7])
+    role: str = Field(..., description="The role the user gets if they accept.", examples=["MEMBER"])
+    status: InvitationStatus = Field(..., description="The current status of the invitation.", examples=[InvitationStatus.PENDING])
+    created_at: datetime = Field(..., description="When the invitation was sent.")
+    token: str = Field(
+        ...,
+        description=(
+            "Token that identifies this invitation. Answer it with "
+            "`POST /invitations/api/v1/{token}/accept` or `/reject`."
+        ),
+        examples=["abc123xyz789"],
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListReceivedInvitationSchema(BaseModel):
+    """
+    Schema for returning the invitations addressed to the authenticated user.
+    """
+    invitations: list[ReceivedInvitationSchema] = Field(..., description="Pending invitations for the user.")
 
 
 class ProjectInvitationOutput(BaseModel):
