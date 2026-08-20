@@ -33,5 +33,4 @@ class BaseRepository(Generic[T]):
 
     async def update(self, entity):
         await self.db.commit()
-        await self.db.refresh(entity)
         return entity
