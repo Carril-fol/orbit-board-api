@@ -48,3 +48,8 @@ class ProjectRepository(BaseRepository[Project]):
         result = await self.db.execute(stmt)
 
         return result.scalars().all(), total
+    
+    async def get_project_by_name(self, name: str) -> Project:
+        stmt = select(Project).where(Project.name == name)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
