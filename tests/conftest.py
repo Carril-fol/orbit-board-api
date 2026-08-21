@@ -3,6 +3,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from main import app
+from projects.repositories.project_repository import ProjectRepository
 from shared.database import engine, get_async_db
 from shared.extensions import limiter
 
@@ -52,3 +53,16 @@ async def authenticated_client(client):
     )
     
     return client
+
+PROJECT_DATA = {
+    "name": "Project tests",
+    "description": "Project description",
+    "status": "PLANNING",
+    "max_collaborators": 2,
+    "visibility": "PUBLIC"
+}
+
+@pytest.fixture
+async def project_created(authenticated_client, db_session):
+    await authenticated_client.post("/projects/api/v1/", json=PROJECT_DATA)
+    return await ProjectRepository(db_session).get_project_by_name(PROJECT_DATA["name"])
