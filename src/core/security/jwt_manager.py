@@ -1,9 +1,10 @@
+import jwt
+from uuid import uuid4
+from jwt import ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
 
-import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyCookie
-from jwt import ExpiredSignatureError, InvalidTokenError
 
 from shared.config.settings import settings
 
@@ -16,6 +17,7 @@ class JwtManager:
     def create_access_token(cls, user_id: int) -> str:
         payload = {
             "sub": str(user_id),
+            "jti": str(uuid4()),
             "type": "access_token",
             "exp": datetime.now(timezone.utc)
             + timedelta(seconds=settings.jwt_access_token_expires),
@@ -27,6 +29,7 @@ class JwtManager:
     def create_refresh_token(cls, user_id: int) -> str:
         payload = {
             "sub": str(user_id),
+            "jti": str(uuid4()),
             "type": "refresh_token",
             "exp": datetime.now(timezone.utc)
             + timedelta(seconds=settings.jwt_refresh_token_expires),
