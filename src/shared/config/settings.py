@@ -29,6 +29,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    db_ssl: bool = True
+
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_cors_origins(cls, value):
@@ -50,12 +53,22 @@ class ProductionSettings(Settings):
     debug: bool = False
 
 
+class TestingSettings(DevelopmentSettings):
+    db_ssl: bool = False
+    
+    model_config = SettingsConfigDict(
+        env_file=".env.test",
+        case_sensitive=False,
+        extra="ignore", 
+    )
+
 @lru_cache
 def get_settings() -> Settings:
     env: str = os.getenv("ENV", "development")
     settings_map = {
         "development": DevelopmentSettings,
         "production": ProductionSettings,
+        "testing": TestingSettings
     }
     settings_class = settings_map.get(env, DevelopmentSettings)
     return settings_class()

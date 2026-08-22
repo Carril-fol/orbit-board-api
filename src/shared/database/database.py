@@ -6,18 +6,22 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import DeclarativeBase
 
 from ..config.settings import settings    
-    
+
+connect_args = {
+    "statement_cache_size": 0,
+    "prepared_statement_cache_size": 0,
+}
+
+if settings.db_ssl:
+    connect_args["ssl"] = True
+ 
 engine = create_async_engine(
     settings.neon_database_url,
     pool_pre_ping=True,
     pool_recycle=300,
     pool_size=5,
     max_overflow=10,
-    connect_args={
-        "ssl": True,
-        "statement_cache_size": 0,
-        "prepared_statement_cache_size": 0,
-    },
+    connect_args=connect_args,
 )
 
 
