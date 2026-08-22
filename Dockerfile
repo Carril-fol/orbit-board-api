@@ -2,7 +2,7 @@ FROM python:3.13-alpine AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /project-board-api
+WORKDIR /orbit-board-api
 
 COPY pyproject.toml uv.lock ./
 
@@ -16,15 +16,22 @@ COPY main.py .
 
 FROM python:3.13-alpine AS final
 
-WORKDIR /project-board-api
+WORKDIR /orbit-board-api
 
-COPY --from=builder /project-board-api/.venv ./.venv
-COPY --from=builder /project-board-api/src ./src
-COPY --from=builder /project-board-api/alembic ./alembic
-COPY --from=builder /project-board-api/alembic.ini .
-COPY --from=builder /project-board-api/main.py .
+RUN adduser -D -H -u 10001 orbit
 
-ENV PATH="/project-board-api/.venv/bin:$PATH"
-ENV PYTHONPATH="/project-board-api/src"
+COPY --from=builder --chown=orbit:orbit /orbit-board-api/.venv ./.venv
+COPY --from=builder --chown=orbit:orbit /orbit-board-api/src ./src
+COPY --from=builder --chown=orbit:orbit /orbit-board-api/alembic ./alembic
+COPY --from=builder --chown=orbit:orbit /orbit-board-api/alembic.ini .
+COPY --from=builder --chown=orbit:orbit /orbit-board-api/main.py .
+
+ENV PATH="/orbit-board-api/.venv/bin:$PATH"
+ENV PYTHONPATH="/orbit-board-api/src"
+ENV PYTHONUNBUFFERED=1
+
+USER orbit
+
+EXPOSE 8000
 
 CMD ["python", "main.py"]
