@@ -23,14 +23,13 @@ from audit_logs.models.audit_log_model import AuditLog
 
 from shared.config.settings import settings
 from shared.database import Base
-from shared.database.database import sanitize_url
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 # Same sanitizing the app does: the Neon URL carries libpq parameters
 # (sslmode, channel_binding) that asyncpg does not accept.
-config.set_main_option("sqlalchemy.url", sanitize_url(settings.neon_database_url))
+config.set_main_option("sqlalchemy.url", settings.neon_database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
