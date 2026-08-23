@@ -18,6 +18,12 @@ async def test_register_user(client: AsyncClient, user_service):
     user = await user_service.get_user_by_email(DATA["email"])
     assert user is not None
     assert user.username == DATA["username"]
+
+async def test_register_user_with_existing_email(client: AsyncClient):
+    await client.post(f"{URL_PREFIX}/register", json=DATA)
+
+    response = await client.post(f"{URL_PREFIX}/register", json=DATA)
+    assert response.status_code == 409
     
 async def test_login(client: AsyncClient):
     await client.post(f"{URL_PREFIX}/register", json=DATA)
@@ -30,6 +36,28 @@ async def test_login(client: AsyncClient):
         }
     )
     assert response.status_code == 200
+
+async def test_login_with_wrong_password(client: AsyncClient):
+    await client.post(f"{URL_PREFIX}/register", json=DATA)
+
+    response = await client.post(
+        f"{URL_PREFIX}/login",
+        json={
+            "email": DATA["email"],
+            "password": "wrongpassworD123-"
+        }
+    )
+    assert response.status_code == 401
+
+async def test_login_with_unknown_email(client: AsyncClient):
+    response = await client.post(
+        f"{URL_PREFIX}/login",
+        json={
+            "email": "unknown.user@example.com",
+            "password": DATA["password"]
+        }
+    )
+    assert response.status_code == 401
     
 async def test_logout(authenticated_client):
     response = await authenticated_client.post(f"{URL_PREFIX}/logout")

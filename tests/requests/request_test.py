@@ -16,6 +16,14 @@ async def test_create_request(second_client, project_created, request_data, requ
     assert requests[0].status == RequestStatus.PENDING
 
 
+async def test_create_request_on_private_project(second_client, private_project_created, request_data):
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{private_project_created.id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 404
+
+
 async def test_get_all_requests(authenticated_client, project_created):
     response = await authenticated_client.get(f"{URL_PROJECT_PREFIX}/{project_created.id}/requests")
     assert response.status_code == 200

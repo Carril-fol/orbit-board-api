@@ -8,7 +8,7 @@ from projects.exceptions import (
     ProjectAlreadyHasStatus,
     ProjectInsufficientPrivileges,
     ProjectNotFoundError,
-    ProjectIsFull
+    ProjectIsFull,
 )
 from projects_tags.exceptions import ProjectNotFound, ProjectTagNotFound
 from collaborators.exceptions import (
@@ -19,8 +19,6 @@ from collaborators.exceptions import (
 )
 from comments.exceptions import (
     CommentNotFound,
-    CommentTaskNotFound,
-    CommentUserIsNotFromProject,
     CommentUserHasNoPrivileges,
 )
 from tasks.exceptions import (
@@ -139,16 +137,11 @@ def register_request_exception_handlers(app):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-
 def register_project_tag_exception_handlers(app):
     
     @app.exception_handler(ProjectTagNotFound)
     async def project_tag_not_found_handler(request: Request, exc: ProjectTagNotFound):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
-
-    @app.exception_handler(PermissionError)
-    async def permission_error_handler(request: Request, exc: PermissionError):
-        return JSONResponse(status_code=403, content={"detail": str(exc)})
 
     @app.exception_handler(ProjectNotFound)
     async def project_not_found_handler(request: Request, exc: ProjectNotFound):
@@ -202,15 +195,7 @@ def register_comments_exception_handlers(app):
     @app.exception_handler(CommentNotFound)
     async def comment_not_found_handler(request: Request, exc: CommentNotFound):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
-    
-    @app.exception_handler(CommentTaskNotFound)
-    async def comment_task_not_found(request: Request, exc: CommentTaskNotFound):
-        return JSONResponse(status_code=404, content={"detail": str(exc)})
-    
-    @app.exception_handler(CommentUserIsNotFromProject)
-    async def comment_user_is_not_from_project(request: Request, exc: CommentUserIsNotFromProject):
-        return JSONResponse(status_code=403, content={"detail": str(exc)})
-    
+
     @app.exception_handler(CommentUserHasNoPrivileges)
     async def comment_user_has_not_privileges(request: Request, exc: CommentUserHasNoPrivileges):
         return JSONResponse(status_code=403, content={"detail": str(exc)})
@@ -220,13 +205,13 @@ def register_auth_exception_handlers(app):
     
     @app.exception_handler(AuthUserAlreadyExistWithThatEmail)
     async def user_already_exist_with_that_email(request: Request, exc: AuthUserAlreadyExistWithThatEmail):
-        return JSONResponse(status_code=400, content={"detail": str(exc)})
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
     
     @app.exception_handler(InvalidTokenExceptions)
     async def invalid_token(request: Request, exc: InvalidTokenExceptions):
-        return JSONResponse(status_code=404, content={"detail": str(exc)})
+        return JSONResponse(status_code=401, content={"detail": str(exc)})
     
     @app.exception_handler(InvalidCredentialsException)
     async def invalid_credentials(request: Request, exc: InvalidCredentialsException):
-        return JSONResponse(status_code=400, content={"detail": str(exc)})
+        return JSONResponse(status_code=401, content={"detail": str(exc)})
     
