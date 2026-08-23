@@ -29,7 +29,7 @@ from shared.database import Base
 config = context.config
 # Same sanitizing the app does: the Neon URL carries libpq parameters
 # (sslmode, channel_binding) that asyncpg does not accept.
-config.set_main_option("sqlalchemy.url", settings.neon_database_url)
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

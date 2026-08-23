@@ -1,4 +1,3 @@
-import os
 from functools import lru_cache
 
 from pydantic import field_validator
@@ -7,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     secret_key: str
-    neon_database_url: str
+    database_url: str
     server_host: str = "0.0.0.0"
     server_port: int = 8000
 
@@ -62,9 +61,19 @@ class TestingSettings(DevelopmentSettings):
         extra="ignore", 
     )
 
+class EnvironmentSelector(BaseSettings):
+    env: str = "development"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+
 @lru_cache
 def get_settings() -> Settings:
-    env: str = os.getenv("ENV", "development")
+    env: str = EnvironmentSelector().env
     settings_map = {
         "development": DevelopmentSettings,
         "production": ProductionSettings,

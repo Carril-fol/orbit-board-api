@@ -16,7 +16,7 @@ if settings.db_ssl:
     connect_args["ssl"] = True
  
 engine = create_async_engine(
-    settings.neon_database_url,
+    settings.database_url,
     pool_pre_ping=True,
     pool_recycle=300,
     pool_size=5,
