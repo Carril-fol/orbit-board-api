@@ -5,6 +5,7 @@ from ..interfaces import IProjectService, IProjectAuthorizationService
 from ..exceptions import (
     ProjectAlreadyHasStatus,
     ProjectNotFoundError,
+    ProjectInsufficientPrivileges
 )
 from ..models.project import Project
 from ..repositories.project_repository import ProjectRepository
@@ -49,7 +50,7 @@ class ProjectService(IProjectService):
             user_id, project.id
         )
         if not collaborator:
-            raise ProjectNotFoundError()
+            raise ProjectInsufficientPrivileges()
 
     async def create_project(self, data: RegisterProjectInputSchema, user_id: int):
         project_to_created = ProjectCreateSchema(
