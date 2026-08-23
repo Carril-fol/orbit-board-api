@@ -1,15 +1,15 @@
 # Orbit Board API
 
-Orbit Board is a project management API designed to eliminate friction in collaboration. Users create projects, grow a team through invitations or join requests, and organise the work as hierarchical tasks with assignees and comments. Every relevant change is recorded in an audit trail.
+Orbit Board is a project management API designed to eliminate friction in collaboration. Users create projects, grow a team through invitations or join requests, and organise the work as hierarchical tasks with assignees and comments.
 
 ## ✨ Features
 
 *   **Workspace Management**: Control over the creation and management of your personal projects.
 *   **Open Collaboration System**: Two ways to grow a team — the owner sends invitations, or a user sends a join request the owner approves or declines.
-*   **Publishing**: A project starts `PRIVATE`, readable only by its members. Publishing it (`PUBLIC`) lists it on the open board for any signed-in user to find and ask to join. A private project answers `404` rather than `403`, so its existence does not leak.
+*   **Publishing**: You can choose whether a project is `PRIVATE` or `PUBLIC`. If published as `PUBLIC`, the project will appear in the list visible to users; if `PRIVATE`, it will not appear in that list, and users will only be able to join via invitations.
 *   **Hierarchical Planning**: Task management with subtask support, allowing complex objectives to be broken down into simpler subtasks. A task's progress is derived from how many of its subtasks are done.
 *   **Task Assignment**: The project owner assigns and unassigns collaborators on individual tasks.
-*   **Full Traceability**: Every change is stored as a diff between the previous and the new state. Actions that are not field changes — assigning a user, deleting a task — are stored as events with their full payload.
+*   **Full Traceability**: Every change is stored as a diff between the previous and the new state. Actions like assigning a user, deleting a task — are stored as events with their information.
 *   **Soft Delete**: Deleted tasks keep their row and stop being returned, so history stays intact.
 
 ## 🛠️ Tech Stack
@@ -75,9 +75,9 @@ Follow this steps to configure the project locally
 
 | Variable | Required | Description |
 |---|---|---|
-| `ENV` | no | `development` (default) or `production`. Selects the settings class. |
-| `NEON_DATABASE_URL` | **yes** | Connection string, e.g. `postgresql+asyncpg://user:pass@host/db`. Neon's `sslmode` and `channel_binding` parameters are translated for asyncpg automatically. |
-| `SECRET_KEY` | **yes** | Key used to sign JWTs. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(32))"`. |
+| `ENV` | no | `development`, `production` or `testing`. Selects the settings class. An exported environment variable takes precedence over the value in `.env`. |
+| `DATABASE_URL` | **yes** | Connection string, e.g. `postgresql+asyncpg://user:pass@host/db`. |
+| `SECRET_KEY` | **yes** | Key used to sign JWTs. |
 | `CORS_ORIGINS` | in production | Browser origins allowed to call the API, comma-separated (`https://app.example.com,https://admin.example.com`). Empty means no browser origin is allowed — the API authenticates with cookies, so there is no safe wildcard. Development defaults to `localhost:3000` and `localhost:5173`. |
 | `SERVER_HOST` | no | Defaults to `0.0.0.0`. |
 | `SERVER_PORT` | no | Defaults to `8000`. |
@@ -102,8 +102,6 @@ docker build -t orbit-board-api .
 docker run --env-file .env -p 8000:8000 orbit-board-api
 ```
 
-The image is multi-stage: dependencies are resolved in a builder stage, and only the virtualenv and the application code land in the final image. It runs as an unprivileged user and declares a `HEALTHCHECK` against `/health`.
-
 ### Migrations
 
 ```bash
@@ -112,10 +110,18 @@ uv run alembic revision -m "description"   # create a new revision
 uv run alembic history                     # see the history
 ```
 
+### Running the Tests
+
+The tests use a PostgreSQL instance in Docker to avoid using the production database.
+
+```bash
+docker compose up -d test_db
+uv run pytest
+```
+
+The container listens on port `5433`, so it never collides with a local PostgreSQL on the default port. `tests/conftest.py` sets `ENV=testing` before the application is imported.
+
 ## 📡 API Overview
-
-Routes follow REST: the HTTP method carries the verb, so the path only names resources. Sub-resources are nested under the resource that owns them (`/projects/api/v1/{id}/tasks`), while operations on a single entity live under its own prefix (`/tasks/api/v1/{id}`). Authentication is a JWT cookie, set on login and rotated on refresh. `GET /health` sits outside every prefix, for container health checks.
-
 
 | Resource | Endpoints |
 |---|---|
@@ -130,10 +136,9 @@ Routes follow REST: the HTTP method carries the verb, so the path only names res
 | **Join requests** | `POST /projects/api/v1/{project_id}/requests`, `GET /projects/api/v1/{project_id}/requests`, `GET /requests/api/v1/sent`, `GET /requests/api/v1/{request_id}`, `POST /requests/api/v1/{request_id}/approve`, `POST /requests/api/v1/{request_id}/decline` |
 | **Tags** | `POST /projects/api/v1/{project_id}/tags`, `DELETE /project-tags/api/v1/{tag_id}` |
 | **Audit trail** | `GET /projects/api/v1/{project_id}/audit-logs` |
+| **Core** | `GET /health` |
 
-Reading a project depends on its `visibility`. A `PUBLIC` project is listed on the open board (`GET /projects/api/v1/`) and readable by any signed-in user. A `PRIVATE` one is readable only by its owner and collaborators; everyone else gets `404`, not `403`, so the board's existence stays private too. `GET /projects/api/v1/me` always returns your own projects, published or not.
-
-The full contract, with request and response schemas, is at `/docs`.
+Reading a project depends on its `visibility`. A `PUBLIC` project is listed on the open board (`GET /projects/api/v1/`) and readable by any signed-in user. A `PRIVATE` one is readable only by its owner and collaborators.
 
 ### Example flow
 
