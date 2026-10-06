@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import jwt_required, CurrentUserId
 from shared.extensions import limiter
 
 from ..interfaces import IRequestsService
@@ -32,13 +32,12 @@ project_requests_router = APIRouter(
 )
 @limiter.limit("10/minute")
 async def create(
+    user_id: CurrentUserId,
     request: Request,
     data: RegisterRequestsInputSchema,
     project_id: int,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.create_request(data, user_id, project_id)
     return RequestOutputSchema(msg="Request created successfully")
 
@@ -50,12 +49,11 @@ async def create(
 )
 @limiter.limit("10/minute")
 async def approve(
+    user_id: CurrentUserId,
     request: Request,
     request_id: int,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.respond_request(request_id, user_id, True)
     return RequestOutputSchema(msg="Request approved successfully")
 
@@ -67,12 +65,11 @@ async def approve(
 )
 @limiter.limit("10/minute")
 async def decline(
+    user_id: CurrentUserId,
     request: Request,
     request_id: int,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.respond_request(request_id, user_id, False)
     return RequestOutputSchema(msg="Request declined successfully")
 
@@ -83,12 +80,11 @@ async def decline(
 )
 @limiter.limit("10/minute")
 async def get_all(
+    user_id: CurrentUserId,
     request: Request,
     project_id: int,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     requests = await service.get_all_requests(project_id, user_id)
     return ListDetailRequestSchema(requests=requests)
 
@@ -101,11 +97,10 @@ async def get_all(
 )
 @limiter.limit("10/minute")
 async def get_sent(
+    user_id: CurrentUserId,
     request: Request,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     requests = await service.get_sent_requests(user_id)
     return ListSentRequestSchema(requests=requests)
 
@@ -117,11 +112,10 @@ async def get_sent(
 )
 @limiter.limit("10/minute")
 async def get_request(
+    user_id: CurrentUserId,
     request: Request,
     request_id: int,
     service: IRequestsService = Depends(get_requests_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     request = await service.get_request(request_id, user_id)
     return request

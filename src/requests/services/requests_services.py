@@ -5,6 +5,8 @@ from project_invitations.interfaces import IProjectInvitationService
 from projects.interfaces import IProjectService, IProjectAuthorizationService
 from projects.schemas.project_schema import ProjectVisibility
 from audit_logs.interfaces import IAuditLogService
+from notifications.interfaces import INotificationService
+from notifications.models.notification_model import NotificationType
 
 from ..models.requests_model import Request
 from ..repositories.requests_repository import RequestsRepository
@@ -34,7 +36,8 @@ class RequestsService(IRequestsService):
         project_invitation_service: IProjectInvitationService,
         collaborator_service: ICollaboratorService,
         audit_log_service: IAuditLogService,
-        project_authorization_service: IProjectAuthorizationService
+        project_authorization_service: IProjectAuthorizationService,
+        notification_service: INotificationService,
     ):
         self.requests_repository = requests_repository
         self.project_service = project_service
@@ -42,6 +45,7 @@ class RequestsService(IRequestsService):
         self.collaborator_service = collaborator_service
         self.audit_log_service = audit_log_service
         self.project_authorization_service = project_authorization_service
+        self.notification_service = notification_service
 
     async def _validate_if_exists(self, user_id: int, project_id: int) -> None:
         request = await self.requests_repository.get_request_by_user_id_and_project_id(user_id, project_id)
@@ -60,8 +64,7 @@ class RequestsService(IRequestsService):
 
         await self._validate_if_exists(user_id, project_id)
 
-        project_invitations = await self.project_invitation_service.get_invitation_by_project_and_user(project_id, user_id)
-        if project_invitations:
+        if await self.project_invitation_service.get_pending_invitation(project_id, user_id):
             raise RequestUserAlreadyIsInvited()
 
         user_exists = await self.collaborator_service.get_collaborator_by_user_id_and_project_id(user_id, project_id)
@@ -84,6 +87,12 @@ class RequestsService(IRequestsService):
             entity_id=request_created.id,
             action="create_request",
             data=request_created.to_dict(),
+        )
+        await self.notification_service.notify(
+            user_id=project.owner_id,
+            actor_id=user_id,
+            type=NotificationType.REQUEST_RECEIVED,
+            data={"request_id": request_created.id, "project_id": project.id},
         )
 
     async def respond_request(self, request_id: int, user_id: int, accepted: bool) -> None:
@@ -120,6 +129,12 @@ class RequestsService(IRequestsService):
             action="approve_request" if accepted else "decline_request",
             old_state=old_state,
             new_state=request.to_dict(),
+        )
+        await self.notification_service.notify(
+            user_id=request.user_id,
+            actor_id=user_id,
+            type=NotificationType.REQUEST_APPROVED if accepted else NotificationType.REQUEST_DECLINED,
+            data={"request_id": request.id, "project_id": request.project_id},
         )
 
     async def get_all_requests(self, project_id: int, user_id: int) -> list[DetailRequestSchema]:

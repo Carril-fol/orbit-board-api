@@ -15,13 +15,16 @@ from projects.interfaces import IProjectService, IProjectAuthorizationService
 from audit_logs.dependencies import get_audit_log_service
 from audit_logs.interfaces import IAuditLogService
 
+from notifications.dependencies import get_notifications_service
+from notifications.interfaces import INotificationService
+
 from .interfaces import IRequestsService
 from .repositories.requests_repository import RequestsRepository
 from .services.requests_services import RequestsService
 
 
 def get_requests_repository(
-    db: AsyncSession = Depends(get_async_db),
+    db: AsyncSession = Depends(get_async_db, scope="function"),
 ) -> RequestsRepository:
     return RequestsRepository(db)
 
@@ -33,6 +36,7 @@ def get_requests_service(
     collaborator_service: ICollaboratorService = Depends(get_collaborators_service),
     audit_log_service: IAuditLogService = Depends(get_audit_log_service),
     project_authorization_service: IProjectAuthorizationService = Depends(get_project_authorization_service),
+    notification_service: INotificationService = Depends(get_notifications_service),
 ) -> IRequestsService:
     return RequestsService(
         repo,
@@ -41,4 +45,5 @@ def get_requests_service(
         collaborator_service,
         audit_log_service,
         project_authorization_service,
+        notification_service,
     )
