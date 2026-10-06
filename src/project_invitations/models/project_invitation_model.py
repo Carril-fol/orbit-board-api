@@ -12,6 +12,7 @@ class InvitationStatus(str, Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
+    REVOKED = "REVOKED"
 
 
 class ProjectInvitation(Base):
@@ -41,6 +42,8 @@ class ProjectInvitation(Base):
     token: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+        unique=True,
+        index=True,
     )
     status: Mapped[InvitationStatus] = mapped_column(
         SQLEnum(InvitationStatus),

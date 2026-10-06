@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import jwt_required, CurrentUserId
 from shared.extensions import limiter
 
 from ..interfaces import IProjectInvitationService
@@ -27,12 +27,11 @@ router = APIRouter(
 )
 @limiter.limit("20/minute")
 async def create_invitation(
+    inviter_id: CurrentUserId,
     request: Request,
     data: CreateProjectInvitation,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    inviter_id = _payload["sub"]
     token = await service.create_project_invitation(data, inviter_id)
     return CreateInvitationOutput(
         msg="Invitation created successfully.",
@@ -50,37 +49,33 @@ async def create_invitation(
 )
 @limiter.limit("20/minute")
 async def get_received_invitations(
+    user_id: CurrentUserId,
     request: Request,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     return await service.get_received_invitations(user_id)
 
 
 @router.delete(
     "/{invitation_id}", response_model=ProjectInvitationOutput, status_code=200
 )
-async def remove_invitation(
+async def revoke_invitation(
+    user_id: CurrentUserId,
     invitation_id: int,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
-
-    await service.remove_project_invitation(invitation_id, user_id)
-    return ProjectInvitationOutput(msg="Invitation removed successfully.")
+    await service.revoke_project_invitation(invitation_id, user_id)
+    return ProjectInvitationOutput(msg="Invitation revoked successfully.")
 
 
 @router.post("/{token}/accept", response_model=ProjectInvitationOutput, status_code=200)
 @limiter.limit("20/minute")
 async def accept_invitation(
+    user_id: CurrentUserId,
     request: Request,
     token: str,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
 
     await service.respond_project_invitation(token, user_id, True)
     return ProjectInvitationOutput(msg="Invitation accepted successfully.")
@@ -89,12 +84,11 @@ async def accept_invitation(
 @router.post("/{token}/reject", response_model=ProjectInvitationOutput, status_code=200)
 @limiter.limit("20/minute")
 async def reject_invitation(
+    user_id: CurrentUserId,
     request: Request,
     token: str,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
 
     await service.respond_project_invitation(token, user_id, False)
     return ProjectInvitationOutput(msg="Invitation rejected successfully.")

@@ -9,13 +9,14 @@ class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
     def __init__(self, db: AsyncSession):
         super().__init__(ProjectInvitation, db)
 
-    async def get_invite_by_project_id_and_invitee_id(self, project_id: int, invitee_id: int):
+    async def get_pending_invite(self, project_id: int, invitee_id: int):
         stmt = select(ProjectInvitation).where(
             ProjectInvitation.id_project == project_id,
             ProjectInvitation.id_invitee == invitee_id,
+            ProjectInvitation.status == InvitationStatus.PENDING,
         )
         result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_invite_by_id(self, id: int):
         stmt = select(ProjectInvitation).where(ProjectInvitation.id == id)
@@ -23,9 +24,13 @@ class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
         return result.scalar_one_or_none()
 
     async def get_pending_invitations_for_invitee(self, invitee_id: int):
-        stmt = select(ProjectInvitation).where(
-            ProjectInvitation.id_invitee == invitee_id,
-            ProjectInvitation.status == InvitationStatus.PENDING,
+        stmt = (
+            select(ProjectInvitation)
+            .where(
+                ProjectInvitation.id_invitee == invitee_id,
+                ProjectInvitation.status == InvitationStatus.PENDING,
+            )
+            .order_by(ProjectInvitation.id.desc())
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
@@ -35,12 +40,3 @@ class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_project_invitation_by_project_id_and_user_id(
-        self, project_id: int, user_id: int
-    ):
-        stmt = select(ProjectInvitation).where(
-            ProjectInvitation.id_project == project_id,
-            ProjectInvitation.id_invitee == user_id,
-        )
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
