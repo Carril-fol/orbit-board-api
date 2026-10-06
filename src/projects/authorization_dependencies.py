@@ -17,7 +17,7 @@ from .interfaces import IProjectAuthorizationService
 
 
 def get_project_repository(
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db, scope="function")
 ) -> ProjectRepository:
     return ProjectRepository(db)
 

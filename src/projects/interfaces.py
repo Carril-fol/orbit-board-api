@@ -42,11 +42,11 @@ class IProjectService(ABC):
         pass
 
     @abstractmethod
-    async def get_all_project(self, per_page: int, page: int) -> ListProjectDetail:
+    async def get_all_project(self, limit: int, offset: int) -> ListProjectDetail:
         pass
 
     @abstractmethod
     async def get_projects_for_user(
-        self, user_id: int, per_page: int, page: int
+        self, user_id: int, limit: int, offset: int
     ) -> ListProjectDetail:
         pass
