@@ -12,7 +12,7 @@ from .repositories.project_tag_repository import ProjectTagRepository
 from .services.project_tag_service import ProjectTagService
 
 
-def get_project_tag_repository(db: AsyncSession = Depends(get_async_db)) -> ProjectTagRepository:
+def get_project_tag_repository(db: AsyncSession = Depends(get_async_db, scope="function")) -> ProjectTagRepository:
     return ProjectTagRepository(db)
 
 
