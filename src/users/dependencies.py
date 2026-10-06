@@ -9,7 +9,7 @@ from .services.user_service import UserService
 
 
 def get_user_repository(
-    db: AsyncSession = Depends(get_async_db),
+    db: AsyncSession = Depends(get_async_db, scope="function"),
 ) -> UserRepository:
     return UserRepository(db)
 
