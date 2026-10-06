@@ -1,5 +1,7 @@
 from projects.interfaces import IProjectAuthorizationService
 from audit_logs.interfaces import IAuditLogService
+from notifications.interfaces import INotificationService
+from notifications.models.notification_model import NotificationType
 
 from ..interfaces import ICollaboratorService
 from ..models.collaborators_model import Collaborators
@@ -23,10 +25,12 @@ class CollaboratorService(ICollaboratorService):
         repository: CollaboratorRepository,
         audit_log_service: IAuditLogService,
         project_authorization_service: IProjectAuthorizationService,
+        notification_service: INotificationService,
     ):
         self.repository = repository
         self.audit_log_service = audit_log_service
         self.project_authorization_service = project_authorization_service
+        self.notification_service = notification_service
 
     async def count_project_collaborators(self, project_id: int) -> int:
         return await self.repository.count_collaborators_from_project(project_id)
@@ -88,6 +92,12 @@ class CollaboratorService(ICollaboratorService):
             action="remove_collaborator",
             data=removed_state,
         )
+        await self.notification_service.notify(
+            user_id=removed_state["id_user"],
+            actor_id=user_id,
+            type=NotificationType.REMOVED_FROM_PROJECT,
+            data={"project_id": removed_state["id_project"]},
+        )
 
     async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int) -> Collaborators:
         collaborator = await self.repository.get_by_id(collaborator_id)
@@ -114,6 +124,13 @@ class CollaboratorService(ICollaboratorService):
             old_state=old_state,
             new_state=new_state,
         )
+        if old_state["role"] != new_state["role"]:
+            await self.notification_service.notify(
+                user_id=collaborator.id_user,
+                actor_id=user_id,
+                type=NotificationType.ROLE_CHANGED,
+                data={"project_id": collaborator.id_project, "role": collaborator.role},
+            )
 
     async def get_project_ids_for_user(self, user_id: int) -> list[int]:
         collaborators = await self.repository.get_collaborator_by_user_id(user_id)
