@@ -53,28 +53,40 @@ async def client(db_session):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as async_client:
         yield async_client
         
+USER_DATA = {
+    "first_name": "Test",
+    "last_name": "Test",
+    "username": "Test Username",
+    "email": "test.test@example.com",
+    "password": "testpassworD123-",
+    "confirm_password": "testpassworD123-",
+}
+
+async def _register_and_login(async_client: AsyncClient, user_data: dict) -> AsyncClient:
+    await async_client.post("/auth/api/v1/register", json=user_data)
+    await async_client.post(
+        "/auth/api/v1/login",
+        json={"email": user_data["email"], "password": user_data["password"]},
+    )
+    return async_client
+
 @pytest.fixture
 async def authenticated_client(client):
-    DATA = {
-        "first_name": "Test",
-        "last_name": "Test",
-        "username": "Test Username",
-        "email": "test.test@example.com",
-        "password": "testpassworD123-",
-        "confirm_password": "testpassworD123-",
-    }
-    
-    await client.post("/auth/api/v1/register", json=DATA)
+    return await _register_and_login(client, USER_DATA)
 
-    await client.post(
-        "/auth/api/v1/login",
-        json={
-            "email": "test.test@example.com", 
-            "password": "testpassworD123-"
-        }
-    )
-    
-    return client
+@pytest.fixture
+async def make_client(client):
+    """Factory: each call returns a new client logged in as the given user."""
+    clients = []
+
+    async def _make(user_data: dict) -> AsyncClient:
+        async_client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+        clients.append(async_client)
+        return await _register_and_login(async_client, user_data)
+
+    yield _make
+    for async_client in clients:
+        await async_client.aclose()
 
 SECOND_USER_DATA = {
     "first_name": "Second",
@@ -91,17 +103,8 @@ async def anonymous_client(client):
         yield async_client
 
 @pytest.fixture
-async def second_client(authenticated_client):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as async_client:
-        await async_client.post("/auth/api/v1/register", json=SECOND_USER_DATA)
-        await async_client.post(
-            "/auth/api/v1/login",
-            json={
-                "email": SECOND_USER_DATA["email"],
-                "password": SECOND_USER_DATA["password"],
-            },
-        )
-        yield async_client
+async def second_client(authenticated_client, make_client):
+    return await make_client(SECOND_USER_DATA)
 
 @pytest.fixture
 async def second_user(second_client, db_session):
