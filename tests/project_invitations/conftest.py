@@ -35,4 +35,4 @@ async def invitation_created(
     second_user
 ):
     await authenticated_client.post("/invitations/api/v1/", json=invitation_data)
-    return await invitations_repo.get_invite_by_project_id_and_invitee_id(project_created.id, second_user.id)
+    return await invitations_repo.get_pending_invite(project_created.id, second_user.id)
