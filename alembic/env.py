@@ -20,6 +20,7 @@ from tasks.models.task_model import Task
 from tasks.models.task_user_model import TaskUser
 from comments.models.comment_model import Comment
 from audit_logs.models.audit_log_model import AuditLog
+from notifications.models.notification_model import Notification
 
 from shared.config.settings import settings
 from shared.database import Base
