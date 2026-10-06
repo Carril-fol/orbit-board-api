@@ -22,15 +22,15 @@ class BaseRepository(Generic[T]):
         obj = await self.get_by_id(id)
         if obj:
             await self.db.delete(obj)
-            await self.db.commit()
+            await self.db.flush()
             return True
         return False
 
     async def create(self, entity):
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         return entity
 
     async def update(self, entity):
-        await self.db.commit()
+        await self.db.flush()
         return entity

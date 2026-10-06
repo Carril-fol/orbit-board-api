@@ -52,5 +52,13 @@ class Base(DeclarativeBase):
 
 
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+    # One transaction per request: repositories only flush, the commit happens here.
+    # Use it with Depends(get_async_db, scope="function") so the commit runs before
+    # the response is sent; otherwise a failed commit would still answer 200.
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
