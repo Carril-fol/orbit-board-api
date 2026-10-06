@@ -26,6 +26,7 @@ from comments.controllers.comment_controller import (
 from tasks.controllers.task_user_controller import router as tasks_user_router
 from users.controllers.user_controller import router as users_router
 from audit_logs.controllers.audit_log_controller import router as audit_logs_router
+from notifications.controllers.notification_controller import router as notifications_router
 
 def register_routers(app: FastAPI) -> None:
     app.include_router(auth_router)
@@ -39,6 +40,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(comments_router)
     app.include_router(tasks_user_router)
     app.include_router(audit_logs_router)
+    app.include_router(notifications_router)
     app.include_router(project_tasks_router)
     app.include_router(task_comments_router)
     app.include_router(project_collaborators_router)

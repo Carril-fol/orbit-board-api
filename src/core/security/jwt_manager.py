@@ -1,4 +1,5 @@
 import jwt
+from typing import Annotated
 from uuid import uuid4
 from jwt import ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
@@ -122,3 +123,9 @@ def jwt_required(token: str = Depends(get_access_token_from_cookie)):
 
 def jwt_refresh_required(token: str = Depends(get_refresh_token_from_cookie)):
     return JwtManager.validate_token(token, "refresh_token")
+
+def get_current_user_id(payload: dict = Depends(jwt_required)) -> int:
+    return payload["sub"]
+
+
+CurrentUserId = Annotated[int, Depends(get_current_user_id)]
