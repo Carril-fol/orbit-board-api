@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import jwt_required, CurrentUserId
 from shared.extensions import limiter
+from shared.pagination import Pagination
 
 from ..dependencies import get_project_service
 from ..interfaces import IProjectService
@@ -27,12 +28,11 @@ router = APIRouter(
 @router.post("/", response_model=RegisterProjectOutputSchema, status_code=201)
 @limiter.limit("5/minute")
 async def create_project(
+    user_id: CurrentUserId,
     request: Request,
     data: RegisterProjectInputSchema,
     service: IProjectService = Depends(get_project_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.create_project(data, user_id)
     return RegisterProjectOutputSchema(msg="Project created successfully")
 
@@ -41,50 +41,43 @@ async def create_project(
 @limiter.limit("5/minute")
 async def get_all_project(
     request: Request,
-    per_page: int = Query(10, ge=1, le=100, description="Projects per page."),
-    page: int = Query(1, ge=1, description="1-indexed page number."),
+    page: Pagination,
     service: IProjectService = Depends(get_project_service),
-    payload: dict = Depends(jwt_required),
 ):
-    list_detailed_projects = await service.get_all_project(per_page, page)
-    return list_detailed_projects
+    return await service.get_all_project(page.limit, page.offset)
 
 
 @router.get("/me", response_model=ListProjectDetail, status_code=200)
 @limiter.limit("5/minute")
 async def get_my_projects(
+    user_id: CurrentUserId,
     request: Request,
-    per_page: int = Query(10, ge=1, le=100, description="Projects per page."),
-    page: int = Query(1, ge=1, description="1-indexed page number."),
+    page: Pagination,
     service: IProjectService = Depends(get_project_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
-    return await service.get_projects_for_user(user_id, per_page, page)
+    return await service.get_projects_for_user(user_id, page.limit, page.offset)
 
 
 @router.get("/{project_id}", response_model=ProjectDetail, status_code=200)
 @limiter.limit("5/minute")
 async def get_project(
+    user_id: CurrentUserId,
     request: Request,
     project_id: int,
     service: IProjectService = Depends(get_project_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     return await service.detail_project_by_id(project_id, user_id)
 
 
 @router.patch("/{project_id}", response_model=UpdateProjectOutputSchema, status_code=200)
 @limiter.limit("5/minute")
 async def update_project(
+    user_id: CurrentUserId,
     request: Request,
     project_id: int,
     data: UpdateProjectInputSchema,
     service: IProjectService = Depends(get_project_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.update_project(project_id, data, user_id)
     return UpdateProjectOutputSchema(msg="Project updated")
 
@@ -92,11 +85,10 @@ async def update_project(
 @router.delete("/{project_id}", response_model=DeleteProjectOutputSchema, status_code=200)
 @limiter.limit("5/minute")
 async def delete_project(
+    user_id: CurrentUserId,
     request: Request,
     project_id: int,
     service: IProjectService = Depends(get_project_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     await service.delete_project(project_id, user_id)
     return DeleteProjectOutputSchema(msg="Project deleted successfully")

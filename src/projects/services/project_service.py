@@ -132,14 +132,14 @@ class ProjectService(IProjectService):
         )
 
     async def get_projects_for_user(
-        self, user_id: int, per_page: int, page: int
+        self, user_id: int, limit: int, offset: int
     ) -> ListProjectDetail:
         project_ids = await self.collaborator_service.get_project_ids_for_user(user_id)
-        projects_db, total = await self.project_repo.get_projects_by_ids(project_ids, per_page, page)
+        projects_db, total = await self.project_repo.get_projects_by_ids(project_ids, limit, offset)
         projects: list[ProjectDetail] = [ProjectDetail.model_validate(project) for project in projects_db]
-        return ListProjectDetail(projects=projects, total=total)
+        return ListProjectDetail(projects=projects, total=total, limit=limit, offset=offset)
 
-    async def get_all_project(self, per_page: int, page: int) -> ListProjectDetail:
-        projects_db, total = await self.project_repo.get_all_project(per_page, page)
+    async def get_all_project(self, limit: int, offset: int) -> ListProjectDetail:
+        projects_db, total = await self.project_repo.get_all_project(limit, offset)
         projects: list[ProjectDetail] = [ProjectDetail.model_validate(project) for project in projects_db]
-        return ListProjectDetail(projects=projects, total=total)
+        return ListProjectDetail(projects=projects, total=total, limit=limit, offset=offset)

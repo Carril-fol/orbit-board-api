@@ -150,3 +150,5 @@ class ListProjectDetail(BaseModel):
     """
     projects: list[ProjectDetail] = Field(..., description="List of project details.")
     total: int = Field(..., description="Total number of projects found.", examples=[100])
+    limit: int = Field(..., description="Maximum number of projects returned.", examples=[20])
+    offset: int = Field(..., description="Number of projects skipped.", examples=[0])
