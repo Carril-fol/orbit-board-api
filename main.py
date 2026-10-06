@@ -2,18 +2,7 @@ from uvicorn import run
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.exception_handlers import (
-    register_exception_handlers,
-    register_invitation_exception_handlers,
-    register_project_exception_handlers,
-    register_comments_exception_handlers,
-    register_collaborators_exception_handlers,
-    register_tasks_exception_handlers,
-    register_project_tag_exception_handlers,
-    register_auth_exception_handlers,
-    register_user_exception_handlers,
-    register_request_exception_handlers
-)
+from core.exception_handlers import register_exception_handlers
 from core.routers import register_routers
 from core.logging import LoggingMiddleware
 from shared.config.settings import settings
@@ -47,16 +36,7 @@ def create_app() -> FastAPI:
     )
     app.state.limiter = limiter
 
-    register_project_exception_handlers(app)
-    register_invitation_exception_handlers(app)
-    register_comments_exception_handlers(app)
-    register_collaborators_exception_handlers(app)
-    register_tasks_exception_handlers(app)
-    register_project_tag_exception_handlers(app)
     register_exception_handlers(app)
-    register_auth_exception_handlers(app)
-    register_user_exception_handlers(app)
-    register_request_exception_handlers(app)
 
     register_routers(app)
     
