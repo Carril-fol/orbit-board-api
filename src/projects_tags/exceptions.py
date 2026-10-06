@@ -1,5 +1,11 @@
-class ProjectTagNotFound(Exception):
-    pass
-class ProjectNotFound(Exception):
-    def __init__(self):
-        super().__init__("Project tag not found")
+from core.exceptions import DomainError
+
+
+class ProjectTagNotFound(DomainError):
+    status_code = 404
+    detail = "Project tag not found"
+
+
+class ProjectNotFound(DomainError):
+    status_code = 404
+    detail = "Project tag not found"

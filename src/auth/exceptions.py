@@ -1,13 +1,16 @@
-class InvalidCredentialsException(Exception):
-    def __init__(self):
-        super().__init__("Invalid credentials")
+from core.exceptions import DomainError
 
 
-class InvalidTokenExceptions(Exception):
-    def __init__(self):
-        super().__init__("Invalid token")
-        
+class InvalidCredentialsException(DomainError):
+    status_code = 401
+    detail = "Invalid credentials"
 
-class AuthUserAlreadyExistWithThatEmail(Exception):
-    def __init__(self):
-        super().__init__("An User already has this email")
+
+class InvalidTokenExceptions(DomainError):
+    status_code = 401
+    detail = "Invalid token"
+
+
+class AuthUserAlreadyExistWithThatEmail(DomainError):
+    status_code = 409
+    detail = "An User already has this email"

@@ -1,9 +1,11 @@
-class CommentNotFound(Exception):
-    def __init__(self, message="Comment not found"):
-        self.message = message
-        
+from core.exceptions import DomainError
 
-class CommentUserHasNoPrivileges(Exception):
-    def __init__(self, message="Permission denied"):
-        self.message = message
-    
+
+class CommentNotFound(DomainError):
+    status_code = 404
+    detail = "Comment not found"
+
+
+class CommentUserHasNoPrivileges(DomainError):
+    status_code = 403
+    detail = "Permission denied"

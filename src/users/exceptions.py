@@ -1,3 +1,6 @@
-class UserNotFound(Exception):
-    def __init__(self):
-        super().__init__("User not found.")
+from core.exceptions import DomainError
+
+
+class UserNotFound(DomainError):
+    status_code = 404
+    detail = "User not found."

@@ -1,19 +1,21 @@
-class ProjectInvitationAlreadyExistsError(Exception):
-    def __init__(self):
-        super().__init__("Invite already exists.")
+from core.exceptions import DomainError
 
 
-class ProjectInvitationNotFoundError(Exception):
-    def __init__(self):
-        super().__init__("Invite not found")
-        
-
-class ProjectInvitationPermissionError(Exception):
-    def __init__(self):
-        super().__init__("You do not have permission to respond to this invitation.")
+class ProjectInvitationAlreadyExistsError(DomainError):
+    status_code = 409
+    detail = "Invite already exists."
 
 
-class ProjectInvitationAlreadyResponded(Exception):
-    def __init__(self):
-        super().__init__("The invitation is not valid; it has already been responded to.")
+class ProjectInvitationNotFoundError(DomainError):
+    status_code = 404
+    detail = "Invite not found"
 
+
+class ProjectInvitationPermissionError(DomainError):
+    status_code = 403
+    detail = "You do not have permission to respond to this invitation."
+
+
+class ProjectInvitationAlreadyResponded(DomainError):
+    status_code = 400
+    detail = "The invitation is not valid; it has already been responded to."

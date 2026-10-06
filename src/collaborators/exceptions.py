@@ -1,17 +1,21 @@
-class CollaboratorNotFound(Exception):
-    pass
+from core.exceptions import DomainError
 
 
-class CollaboratorAlreadyExists(Exception):
-    def __init__(self):
-        super().__init__("This user is already a collaborator of this project")
+class CollaboratorNotFound(DomainError):
+    status_code = 404
+    detail = "Collaborator not found"
 
 
-class CollaboratorNotAuthorized(Exception):
-    def __init__(self):
-        super().__init__("You are not a collaborator of this project")
+class CollaboratorAlreadyExists(DomainError):
+    status_code = 409
+    detail = "This user is already a collaborator of this project"
 
 
-class CollaboratorProjectInsufficientPrivileges(Exception):
-    def __init__(self):
-        super().__init__("You are not the owner of this project")
+class CollaboratorNotAuthorized(DomainError):
+    status_code = 403
+    detail = "You are not a collaborator of this project"
+
+
+class CollaboratorProjectInsufficientPrivileges(DomainError):
+    status_code = 403
+    detail = "You are not the owner of this project"

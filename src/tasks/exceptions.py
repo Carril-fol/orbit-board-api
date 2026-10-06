@@ -1,26 +1,31 @@
-class TaskNotFound(Exception):
-    def __init__(self):
-        super().__init__("Task not found")
+from core.exceptions import DomainError
 
 
-class TaskUserHasNotPermission(Exception):
-    def __init__(self):
-        super().__init__("User does not have permission")
+class TaskNotFound(DomainError):
+    status_code = 404
+    detail = "Task not found"
 
 
-class TaskUserIsNotAnCollaborator(Exception):
-    def __init__(self):
-        super().__init__("User is not a collaborator")
+class TaskUserHasNotPermission(DomainError):
+    status_code = 403
+    detail = "User does not have permission"
 
 
-class TaskCannotCompleted(Exception):
-    def __init__(self):
-        super().__init__("Cannot complete task while subtasks are still open")
-class TaskUserAlreadyStatusAssigned(Exception):
-    def __init__(self):
-        super().__init__("The user already has this status assigned to the task")
-        
-        
-class TaskUserNotFound(Exception):
-    def __init__(self):
-        super().__init__("This register not exists")
+class TaskUserIsNotAnCollaborator(DomainError):
+    status_code = 403
+    detail = "User is not a collaborator"
+
+
+class TaskUserAlreadyStatusAssigned(DomainError):
+    status_code = 400
+    detail = "The user already has this status assigned to the task"
+
+
+class TaskCannotCompleted(DomainError):
+    status_code = 400
+    detail = "Cannot complete task while subtasks are still open"
+
+
+class TaskUserNotFound(DomainError):
+    status_code = 404
+    detail = "This register not exists"
