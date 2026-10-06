@@ -50,8 +50,8 @@ async def login(
 ):
     user_id = await service.authenticate(data)
 
-    access_token = jwt_manager.create_access_token(user_id=user_id)
-    refresh_token = jwt_manager.create_refresh_token(user_id=user_id)
+    access_token = jwt_manager.create_token(user_id, "access_token")
+    refresh_token = jwt_manager.create_token(user_id, "refresh_token")
 
     set_auth_cookies(response, access_token, refresh_token)
     return AuthOutputSchema(msg="Login successfully")
@@ -80,8 +80,8 @@ async def refresh(
     _payload: dict = Depends(jwt_refresh_required),
 ):
     user_id = _payload["sub"]
-    access_token = JwtManager.create_access_token(user_id=user_id)
-    refresh_token = JwtManager.create_refresh_token(user_id=user_id)
+    access_token = JwtManager.create_token(user_id, "access_token")
+    refresh_token = JwtManager.create_token(user_id, "refresh_token")
 
     set_auth_cookies(response, access_token, refresh_token)
     return AuthOutputSchema(msg="Token refreshed successfully")

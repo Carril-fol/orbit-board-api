@@ -13,26 +13,19 @@ class JwtManager:
     SECRET_KEY = settings.secret_key
     ALGORITHM = "HS256"
 
+    EXPIRES = {
+        "access_token": settings.jwt_access_token_expires,
+        "refresh_token": settings.jwt_refresh_token_expires,
+    }
+
     @classmethod
-    def create_access_token(cls, user_id: int) -> str:
+    def create_token(cls, user_id: int, token_type: str) -> str:
         payload = {
             "sub": str(user_id),
             "jti": str(uuid4()),
-            "type": "access_token",
+            "type": token_type,
             "exp": datetime.now(timezone.utc)
-            + timedelta(seconds=settings.jwt_access_token_expires),
-        }
-
-        return jwt.encode(payload, cls.SECRET_KEY, algorithm=cls.ALGORITHM)
-
-    @classmethod
-    def create_refresh_token(cls, user_id: int) -> str:
-        payload = {
-            "sub": str(user_id),
-            "jti": str(uuid4()),
-            "type": "refresh_token",
-            "exp": datetime.now(timezone.utc)
-            + timedelta(seconds=settings.jwt_refresh_token_expires),
+            + timedelta(seconds=cls.EXPIRES[token_type]),
         }
 
         return jwt.encode(payload, cls.SECRET_KEY, algorithm=cls.ALGORITHM)
