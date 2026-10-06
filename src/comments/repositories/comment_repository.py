@@ -13,7 +13,13 @@ class CommentRepository(BaseRepository[Comment]):
         super().__init__(Comment, session)
 
     async def get_comments_by_task_id(self, task_id: int, limit: int = 20, offset: int = 0):
-        stmt = select(Comment).where(Comment.task_id == task_id).limit(limit).offset(offset)
+        stmt = (
+            select(Comment)
+            .where(Comment.task_id == task_id)
+            .order_by(Comment.id)
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self.db.execute(stmt)
         return result.scalars().all()
 

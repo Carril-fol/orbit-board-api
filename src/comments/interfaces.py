@@ -20,7 +20,7 @@ class ICommentService(ABC):
         pass
 
     @abstractmethod
-    async def get_comments_by_task_id(self, task_id: int, user_id: int, limit: int = 20, offset: int = 0) -> ListDetailCommentOutputSchema:
+    async def get_comments_by_task_id(self, task_id: int, user_id: int, limit: int, offset: int) -> ListDetailCommentOutputSchema:
         pass
 
     @abstractmethod

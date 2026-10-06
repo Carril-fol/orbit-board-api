@@ -16,7 +16,7 @@ from .repositories.comment_repository import CommentRepository
 from .services.comment_service import CommentService
 
 
-def get_comments_repository(db: AsyncSession = Depends(get_async_db)) -> CommentRepository:
+def get_comments_repository(db: AsyncSession = Depends(get_async_db, scope="function")) -> CommentRepository:
     return CommentRepository(db)
 
 

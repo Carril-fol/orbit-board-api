@@ -116,7 +116,7 @@ class CommentService(ICommentService):
             data=deleted_state,
         )
         
-    async def get_comments_by_task_id(self, task_id: int, user_id: int, limit: int = 20, offset: int = 0) -> ListDetailCommentOutputSchema:
+    async def get_comments_by_task_id(self, task_id: int, user_id: int, limit: int, offset: int) -> ListDetailCommentOutputSchema:
         if not await self.comment_repository.verify_user_access_to_task(user_id, task_id):
             raise CommentUserHasNoPrivileges()
 
