@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import CurrentUserId
 from shared.extensions import limiter
 
 from ..dependencies import get_user_service
@@ -18,9 +18,8 @@ router = APIRouter(prefix="/users/api/v1", tags=["Users"])
 )
 @limiter.limit("10/minute")
 async def get_authenticated_user(
+    user_id: CurrentUserId,
     request: Request,
     service: IUserService = Depends(get_user_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
     return await service.get_user_by_id(user_id)
