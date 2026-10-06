@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
 from audit_logs.interfaces import IAuditLogService
+from notifications.interfaces import INotificationService
+from notifications.models.notification_model import NotificationType
 
 from collaborators.interfaces import ICollaboratorService
 
@@ -28,12 +30,14 @@ class TaskUserService(ITaskUserService):
         task_repo: TaskRepository,
         audit_log_service: IAuditLogService,
         project_authorization_service: IProjectAuthorizationService,
+        notification_service: INotificationService,
     ):
         self.repo = task_user_repo
         self.collaborator_service = collaborator_service
         self.task_repo = task_repo
         self.audit_log_service = audit_log_service
         self.project_authorization_service = project_authorization_service
+        self.notification_service = notification_service
 
     async def _get_task_or_raise(self, task_id: int) -> Task:
         task = await self.task_repo.get_by_id(task_id)
@@ -74,6 +78,12 @@ class TaskUserService(ITaskUserService):
                 "user_id": target_user_id,
             },
         )
+        await self.notification_service.notify(
+            user_id=target_user_id,
+            actor_id=actor_user_id,
+            type=NotificationType.TASK_ASSIGNED,
+            data={"task_id": task_id, "project_id": task.project_id},
+        )
 
     async def unassign_user_from_task(self, task_id: int, target_user_id: int, actor_user_id: int) -> None:
         task = await self._get_task_or_raise(task_id)
@@ -106,4 +116,10 @@ class TaskUserService(ITaskUserService):
                 "user_id": target_user_id,
                 "status": TaskUserStatus.UNASSIGNED.value,
             },
+        )
+        await self.notification_service.notify(
+            user_id=target_user_id,
+            actor_id=actor_user_id,
+            type=NotificationType.TASK_UNASSIGNED,
+            data={"task_id": task_id, "project_id": task.project_id},
         )

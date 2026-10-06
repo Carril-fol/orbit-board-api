@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import CurrentUserId
 from shared.extensions import limiter
 
 from ..dependencies import get_task_service
@@ -27,13 +27,12 @@ project_tasks_router = APIRouter(prefix="/projects/api/v1", tags=["Tasks"])
 )
 @limiter.limit("10/minute")
 async def create_task(
+    user_id: CurrentUserId,
     request: Request,
     data: RegisterTaskInputSchema,
     project_id: int,
     service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
 ):
-    user_id = _payload["sub"]
     await service.create(data, user_id, project_id)
     return TaskOutputSchema(msg="Task created")
 
@@ -45,12 +44,11 @@ async def create_task(
 )
 @limiter.limit("10/minute")
 async def get_task(
+    user_id: CurrentUserId,
     request: Request,
     task_id: int,
     service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
 ):
-    user_id = _payload["sub"]
     task = await service.get_task_by_id(task_id, user_id)
     return task
 
@@ -62,15 +60,14 @@ async def get_task(
 )
 @limiter.limit("10/minute")
 async def get_tasks(
+    current_user_id: CurrentUserId,
     request: Request,
     project_id: int,
     status: str = None,
     priority: str = None,
     user_id: int = None,
     service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
 ):
-    current_user_id = _payload["sub"]
     tasks = await service.get_tasks_by_project(
         current_user_id,
         project_id,
@@ -87,12 +84,11 @@ async def get_tasks(
     status_code=200,
 )
 async def delete_task(
+    user_id: CurrentUserId,
     request: Request,
     task_id: int,
     service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
 ):
-    user_id = _payload["sub"]
     await service.delete_task(task_id, user_id)
     return TaskOutputSchema(msg="Task deleted")
 
@@ -103,13 +99,12 @@ async def delete_task(
     status_code=200,
 )
 async def update_task(
+    user_id: CurrentUserId,
     request: Request,
     task_id: int,
     data: UpdateTaskInputSchema,
     service: ITaskService = Depends(get_task_service),
-    _payload: dict = Depends(jwt_required)
 ):
-    user_id = _payload["sub"]
     await service.update_task(task_id, data, user_id)
     return TaskOutputSchema(msg="Task updated")
 

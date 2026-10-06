@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import CurrentUserId
 from shared.extensions import limiter
 
 from ..dependencies import get_task_user_service
@@ -21,13 +21,12 @@ router = APIRouter(
 )
 @limiter.limit("10/minute")
 async def assign_user_to_task(
+    actor_user_id: CurrentUserId,
     request: Request,
     task_id: int,
     data: AssignUserTaskInputSchema,
     service: ITaskUserService = Depends(get_task_user_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    actor_user_id = _payload["sub"]
     await service.assign_user_to_task(
         task_id,
         data.user_id,
@@ -43,13 +42,12 @@ async def assign_user_to_task(
 )
 @limiter.limit("10/minute")
 async def unassign_user_from_task(
+    actor_user_id: CurrentUserId,
     request: Request,
     task_id: int,
     user_id: int,
     service: ITaskUserService = Depends(get_task_user_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    actor_user_id = _payload["sub"]
     await service.unassign_user_from_task(
         task_id,
         user_id,
