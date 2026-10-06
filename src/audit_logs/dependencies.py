@@ -12,7 +12,7 @@ from .services.audit_log_service import AuditLogService
 
 
 def get_audit_log_repository(
-    db: AsyncSession = Depends(get_async_db),
+    db: AsyncSession = Depends(get_async_db, scope="function"),
 ) -> AuditLogRepository:
     return AuditLogRepository(db)
 

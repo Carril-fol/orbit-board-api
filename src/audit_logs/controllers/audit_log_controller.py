@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Request
 
-from core.security.jwt_manager import jwt_required
+from core.security.jwt_manager import jwt_required, CurrentUserId
 from shared.extensions import limiter
+from shared.pagination import Pagination
 
 from ..dependencies import get_audit_log_service
 from ..interfaces import IAuditLogService
@@ -21,12 +22,10 @@ router = APIRouter(
 )
 @limiter.limit("10/minute")
 async def get_project_audit_logs(
+    user_id: CurrentUserId,
     request: Request,
     project_id: int,
-    limit: int = Query(50, ge=1, le=200, description="Maximum number of entries to return."),
-    offset: int = Query(0, ge=0, description="Number of entries to skip."),
+    page: Pagination,
     service: IAuditLogService = Depends(get_audit_log_service),
-    _payload: dict = Depends(jwt_required),
 ):
-    user_id = _payload["sub"]
-    return await service.get_project_logs(project_id, user_id, limit, offset)
+    return await service.get_project_logs(project_id, user_id, page.limit, page.offset)
