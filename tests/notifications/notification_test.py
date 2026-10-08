@@ -16,7 +16,7 @@ async def notification_types(client) -> list[str]:
 async def invitation_sent(authenticated_client, project_created, second_user):
     response = await authenticated_client.post(
         "/invitations/api/v1/",
-        json={"id_project": project_created.id, "id_invitee": second_user.id, "role": "MEMBER"},
+        json={"id_project": project_created.id, "invitee_email": second_user.email, "role": "MEMBER"},
     )
     return response.json()["token"]
 

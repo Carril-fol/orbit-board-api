@@ -3,7 +3,7 @@ from project_invitations.models.project_invitation_model import InvitationStatus
 URL_PREFIX = "/invitations/api/v1"
 
 UNKNOWN_PROJECT_ID = 2_000_000_000
-UNKNOWN_USER_ID = 2_000_000_000
+UNKNOWN_USER_EMAIL = "nobody@example.com"
 
 
 async def test_create_invitation(authenticated_client, invitation_data, invitations_repo, second_user):
@@ -127,13 +127,19 @@ async def test_invite_existing_collaborator(authenticated_client, second_client,
 async def test_invite_yourself(authenticated_client, invitation_data):
     me = (await authenticated_client.get("/users/api/v1/me")).json()
 
-    response = await authenticated_client.post(f"{URL_PREFIX}/", json={**invitation_data, "id_invitee": me["id"]})
+    response = await authenticated_client.post(f"{URL_PREFIX}/", json={**invitation_data, "invitee_email": me["email"]})
     assert response.status_code == 409
 
 
 async def test_invite_unknown_user(authenticated_client, invitation_data):
-    response = await authenticated_client.post(f"{URL_PREFIX}/", json={**invitation_data, "id_invitee": UNKNOWN_USER_ID})
+    response = await authenticated_client.post(f"{URL_PREFIX}/", json={**invitation_data, "invitee_email": UNKNOWN_USER_EMAIL})
     assert response.status_code == 404
+
+
+async def test_invite_without_email(authenticated_client, invitation_data):
+    no_email = {k: v for k, v in invitation_data.items() if k != "invitee_email"}
+    response = await authenticated_client.post(f"{URL_PREFIX}/", json=no_email)
+    assert response.status_code == 422
 
 
 async def test_request_after_rejected_invitation(second_client, invitation_created):

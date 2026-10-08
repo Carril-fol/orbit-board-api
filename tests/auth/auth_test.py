@@ -69,3 +69,51 @@ async def test_refresh(authenticated_client):
     
     assert response.status_code == 200
     assert authenticated_client.cookies["refresh_token"] != old_access
+
+def use_only_cookie(client, name: str, value: str):
+    client.cookies.clear()
+    client.cookies.set(name, value)
+
+async def refresh_with(client, refresh_token: str):
+    use_only_cookie(client, "refresh_token", refresh_token)
+    return await client.post(f"{URL_PREFIX}/refresh")
+
+async def get_me_with(client, access_token: str):
+    use_only_cookie(client, "access_token", access_token)
+    return await client.get("/users/api/v1/me")
+
+async def test_refresh_token_is_single_use(authenticated_client):
+    old_refresh = authenticated_client.cookies["refresh_token"]
+    await authenticated_client.post(f"{URL_PREFIX}/refresh")
+    new_refresh = authenticated_client.cookies["refresh_token"]
+
+    response = await refresh_with(authenticated_client, old_refresh)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid token"
+
+    response = await refresh_with(authenticated_client, new_refresh)
+    assert response.status_code == 200
+
+async def test_logout_revokes_refresh_token(authenticated_client):
+    old_refresh = authenticated_client.cookies["refresh_token"]
+    await authenticated_client.post(f"{URL_PREFIX}/logout")
+
+    response = await refresh_with(authenticated_client, old_refresh)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid token"
+
+async def test_logout_without_session(client):
+    response = await client.post(f"{URL_PREFIX}/logout")
+    assert response.status_code == 200
+
+async def test_logout_revokes_access_token(authenticated_client):
+    access = authenticated_client.cookies["access_token"]
+    refresh = authenticated_client.cookies["refresh_token"]
+    assert (await get_me_with(authenticated_client, access)).status_code == 200
+
+    authenticated_client.cookies.set("refresh_token", refresh)
+    await authenticated_client.post(f"{URL_PREFIX}/logout")
+
+    response = await get_me_with(authenticated_client, access)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Token revoked"

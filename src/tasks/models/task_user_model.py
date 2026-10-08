@@ -37,7 +37,7 @@ class TaskUser(Base):
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        default=datetime.now(timezone.utc),
+        default=lambda: datetime.now(timezone.utc),
     )
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

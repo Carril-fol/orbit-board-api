@@ -21,7 +21,7 @@ def invitations_repo(db_session: AsyncSession):
 def invitation_data(project_created, second_user):
     return {
         "id_project": project_created.id,
-        "id_invitee": second_user.id,
+        "invitee_email": second_user.email,
         "role": "MEMBER",
     }
 
