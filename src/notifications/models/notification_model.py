@@ -18,6 +18,7 @@ class NotificationType(StrEnum):
     TASK_UNASSIGNED = "task_unassigned"
     ROLE_CHANGED = "role_changed"
     REMOVED_FROM_PROJECT = "removed_from_project"
+    COLLABORATOR_LEFT = "collaborator_left"
 
 
 class Notification(Base):

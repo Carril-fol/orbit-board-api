@@ -19,3 +19,8 @@ class CollaboratorNotAuthorized(DomainError):
 class CollaboratorProjectInsufficientPrivileges(DomainError):
     status_code = 403
     detail = "You are not the owner of this project"
+
+
+class CollaboratorIsProjectOwner(DomainError):
+    status_code = 409
+    detail = "The project owner cannot leave or be removed from the project"

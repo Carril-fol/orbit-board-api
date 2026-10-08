@@ -21,6 +21,10 @@ class ICollaboratorService(ABC):
         pass
 
     @abstractmethod
+    async def leave_project(self, project_id: int, user_id: int) -> None:
+        pass
+
+    @abstractmethod
     async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int):
         pass
 

@@ -30,6 +30,22 @@ async def get_collaborators(
     return await service.get_collaborators(project_id, user_id)
 
 
+@project_collaborators_router.delete(
+    "/{project_id}/collaborators/me",
+    response_model=CollaboratorsOutputSchema,
+    status_code=200,
+)
+@limiter.limit("10/minute")
+async def leave_project(
+    user_id: CurrentUserId,
+    request: Request,
+    project_id: int,
+    service: ICollaboratorService = Depends(get_collaborators_service),
+):
+    await service.leave_project(project_id, user_id)
+    return CollaboratorsOutputSchema(msg="You left the project")
+
+
 @router.delete(
     "/{collaborator_id}",
     response_model=CollaboratorsOutputSchema,

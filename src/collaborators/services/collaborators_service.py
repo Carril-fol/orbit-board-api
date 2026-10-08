@@ -14,6 +14,7 @@ from ..schemas.collaborators_schema import (
 )
 from ..exceptions import (
     CollaboratorAlreadyExists,
+    CollaboratorIsProjectOwner,
     CollaboratorNotAuthorized,
     CollaboratorNotFound
 )
@@ -73,30 +74,54 @@ class CollaboratorService(ICollaboratorService):
         collaborators_list: list[DetailCollaboratorsSchema] = [DetailCollaboratorsSchema.model_validate(collaborator) for collaborator in collaborators_raw]
         return ListDetailCollaboratorsSchema(collaborators=collaborators_list)
 
+    async def _delete_from_project(self, collaborator: Collaborators, actor_id: int, action: str) -> None:
+        removed_state = collaborator.to_dict()
+
+        await self.repository.delete(collaborator.id)
+        # Someone outside the project can't keep tasks of it assigned.
+        await self.repository.unassign_user_from_project_tasks(collaborator.id_user, collaborator.id_project)
+
+        await self.audit_log_service.record_event(
+            user_id=actor_id,
+            project_id=removed_state["id_project"],
+            entity_type="Collaborator",
+            entity_id=removed_state["id"],
+            action=action,
+            data=removed_state,
+        )
+
     async def remove_collaborator(self, collaborator_id: int, user_id: int):
         collaborator: Collaborators = await self.repository.get_by_id(collaborator_id)
         if not collaborator:
             raise CollaboratorNotFound()
 
-        await self.project_authorization_service.require_project_owner(user_id, collaborator.id_project)
+        project = await self.project_authorization_service.require_project_owner(user_id, collaborator.id_project)
+        if collaborator.id_user == project.owner_id:
+            raise CollaboratorIsProjectOwner()
 
         removed_state = collaborator.to_dict()
+        await self._delete_from_project(collaborator, user_id, "remove_collaborator")
 
-        await self.repository.delete(collaborator_id)
-
-        await self.audit_log_service.record_event(
-            user_id=user_id,
-            project_id=removed_state["id_project"],
-            entity_type="Collaborator",
-            entity_id=collaborator_id,
-            action="remove_collaborator",
-            data=removed_state,
-        )
         await self.notification_service.notify(
             user_id=removed_state["id_user"],
             actor_id=user_id,
             type=NotificationType.REMOVED_FROM_PROJECT,
             data={"project_id": removed_state["id_project"]},
+        )
+
+    async def leave_project(self, project_id: int, user_id: int) -> None:
+        project = await self.project_authorization_service.get_project(project_id)
+        if project.owner_id == user_id:
+            raise CollaboratorIsProjectOwner()
+
+        collaborator = await self.require_project_member(user_id, project_id)
+        await self._delete_from_project(collaborator, user_id, "leave_project")
+
+        await self.notification_service.notify(
+            user_id=project.owner_id,
+            actor_id=user_id,
+            type=NotificationType.COLLABORATOR_LEFT,
+            data={"project_id": project_id},
         )
 
     async def change_role_collaborator(self, collaborator_id: int, data: UpdateCollaboratorsSchema, user_id: int) -> Collaborators:

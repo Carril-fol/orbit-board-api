@@ -1,8 +1,12 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 
 from users.models.user import User
+from tasks.models.task_model import Task
+from tasks.models.task_user_model import TaskUser, TaskUserStatus
 from shared.database.base_repository import BaseRepository
 
 from ..models.collaborators_model import Collaborators
@@ -47,3 +51,15 @@ class CollaboratorRepository(BaseRepository[Collaborators]):
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def unassign_user_from_project_tasks(self, user_id: int, project_id: int) -> None:
+        stmt = (
+            update(TaskUser)
+            .where(
+                TaskUser.user_id == user_id,
+                TaskUser.status == TaskUserStatus.ASSIGNED,
+                TaskUser.task_id.in_(select(Task.id).where(Task.project_id == project_id)),
+            )
+            .values(status=TaskUserStatus.UNASSIGNED, updated_at=datetime.now(timezone.utc))
+        )
+        await self.db.execute(stmt)
