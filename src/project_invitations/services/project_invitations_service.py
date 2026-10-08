@@ -5,6 +5,7 @@ from projects.interfaces import IProjectAuthorizationService
 from audit_logs.interfaces import IAuditLogService
 from collaborators.exceptions import CollaboratorAlreadyExists
 from users.interfaces import IUserService
+from users.exceptions import UserNotFound
 from notifications.interfaces import INotificationService
 from notifications.models.notification_model import NotificationType
 
@@ -53,21 +54,25 @@ class ProjectInvitationService(IProjectInvitationService):
     ) -> str:
         project = await self.project_authorization_service.require_project_owner(inviter_id, data.id_project)
 
-        await self.user_service.get_user_by_id(data.id_invitee)
+        invitee = await self.user_service.get_user_by_email(data.invitee_email)
+        if not invitee:
+            raise UserNotFound()
 
-        if await self.collaborator_service.get_collaborator_by_user_id_and_project_id(data.id_invitee, project.id):
+        if await self.collaborator_service.get_collaborator_by_user_id_and_project_id(invitee.id, project.id):
             raise CollaboratorAlreadyExists()
 
         collaborators_from_project = await self.collaborator_service.count_project_collaborators(project.id)
         await self.project_authorization_service.require_capacity_for(project.id, collaborators_from_project)
 
-        if await self.repository.get_pending_invite(project.id, data.id_invitee):
+        if await self.repository.get_pending_invite(project.id, invitee.id):
             raise ProjectInvitationAlreadyExistsError()
 
         token = token_urlsafe(32)
         project_invitation_instance = ProjectInvitation(
-            **data.model_dump(), 
-            id_inviter=inviter_id, 
+            id_project=project.id,
+            id_invitee=invitee.id,
+            role=data.role,
+            id_inviter=inviter_id,
             token=token
         )
         invitation_created = await self.repository.create(project_invitation_instance)

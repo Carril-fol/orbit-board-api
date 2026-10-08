@@ -1,24 +1,17 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from ..models.project_invitation_model import InvitationStatus
 
 
-class ProjectInvitationBase(BaseModel):
-    """
-    Base schema for project invitations.
-    """
-    id_project: int = Field(gt=0, description="The unique identifier of the project.", examples=[1])
-    id_invitee: int = Field(gt=0, description="The unique identifier of the user being invited.", examples=[10])
-    role: str = Field(min_length=1, max_length=100, description="The role assigned to the user if they accept the invitation.", examples=["MEMBER"])
-
-
-class CreateProjectInvitation(ProjectInvitationBase):
+class CreateProjectInvitation(BaseModel):
     """
     Schema for creating a project invitation.
     """
-    pass
+    id_project: int = Field(gt=0, description="The unique identifier of the project.", examples=[1])
+    invitee_email: EmailStr = Field(..., description="Email address of the registered user being invited.", examples=["jane.doe@example.com"])
+    role: str = Field(min_length=1, max_length=100, description="The role assigned to the user if they accept the invitation.", examples=["MEMBER"])
 
     @field_validator("role", mode="before")
     @classmethod
