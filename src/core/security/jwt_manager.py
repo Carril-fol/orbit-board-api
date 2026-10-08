@@ -6,8 +6,11 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException
 from fastapi.security import APIKeyCookie
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.repositories.revoked_token_repository import RevokedTokenRepository
 from shared.config.settings import settings
+from shared.database import get_async_db
 
 
 class JwtManager:
@@ -117,8 +120,14 @@ def get_refresh_token_from_cookie(token: str = Depends(refresh_token_cookie)) ->
     return token
 
 
-def jwt_required(token: str = Depends(get_access_token_from_cookie)):
-    return JwtManager.validate_token(token, "access_token")
+async def jwt_required(
+    token: str = Depends(get_access_token_from_cookie),
+    db: AsyncSession = Depends(get_async_db, scope="function"),
+):
+    payload = JwtManager.validate_token(token, "access_token")
+    if await RevokedTokenRepository(db).is_revoked(payload["jti"]):
+        raise HTTPException(status_code=401, detail="Token revoked")
+    return payload
 
 
 def jwt_refresh_required(token: str = Depends(get_refresh_token_from_cookie)):
