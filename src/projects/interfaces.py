@@ -11,6 +11,10 @@ from .schemas.project_schema import (
 class IProjectAuthorizationService(ABC):
 
     @abstractmethod
+    async def get_project(self, project_id: int) -> Project:
+        pass
+
+    @abstractmethod
     async def require_project_owner(self, user_id: int, project_id: int) -> Project:
         pass
 
