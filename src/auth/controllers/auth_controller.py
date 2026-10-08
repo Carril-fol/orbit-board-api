@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from core.security.jwt_manager import (
     JwtManager,
-    jwt_required,
     jwt_refresh_required,
+    access_token_cookie,
+    refresh_token_cookie,
     set_auth_cookies,
     clear_auth_cookies,
 )
@@ -63,9 +64,12 @@ async def login(
     status_code=200
 )
 async def logout(
-    response: Response, 
-    _payload: dict = Depends(jwt_required)
+    response: Response,
+    access_token: str | None = Depends(access_token_cookie),
+    refresh_token: str | None = Depends(refresh_token_cookie),
+    service: IAuthService = Depends(get_auth_service),
 ):
+    await service.logout(access_token, refresh_token)
     clear_auth_cookies(response)
     return AuthOutputSchema(msg="Logout successfully")
 
@@ -78,7 +82,9 @@ async def logout(
 async def refresh(
     response: Response,
     _payload: dict = Depends(jwt_refresh_required),
+    service: IAuthService = Depends(get_auth_service),
 ):
+    await service.rotate_refresh_token(_payload)
     user_id = _payload["sub"]
     access_token = JwtManager.create_token(user_id, "access_token")
     refresh_token = JwtManager.create_token(user_id, "refresh_token")
