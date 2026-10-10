@@ -32,7 +32,8 @@ class CommentRepository(BaseRepository[Comment]):
         stmt = select(exists().where(
             Collaborators.id_user == user_id,
             Collaborators.id_project == Task.project_id,
-            Task.id == task_id
+            Task.id == task_id,
+            Task.deleted_at.is_(None),
         ))
         result = await self.db.execute(stmt)
         return result.scalar()
