@@ -11,5 +11,9 @@ wheels/
 .env
 
 .claude
+.git
+.github
+.pytest_cache
+tests
 
 /project board api
