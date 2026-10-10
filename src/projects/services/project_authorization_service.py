@@ -2,11 +2,13 @@ from ..interfaces import IProjectAuthorizationService
 
 from ..exceptions import (
     ProjectInsufficientPrivileges,
+    ProjectIsCanceled,
     ProjectNotFoundError,
     ProjectIsFull
 )
 from ..models.project import Project
 from ..repositories.project_repository import ProjectRepository
+from ..schemas.project_schema import ProjectStatus
 
 
 class ProjectAuthorizationService(IProjectAuthorizationService):
@@ -28,8 +30,16 @@ class ProjectAuthorizationService(IProjectAuthorizationService):
 
         return project
 
-    async def require_capacity_for(self, project_id: int, current_members: int) -> None:
+    async def require_open_project(self, project_id: int) -> Project:
         project = await self.get_project(project_id)
+
+        if project.status == ProjectStatus.CANCELED:
+            raise ProjectIsCanceled()
+
+        return project
+
+    async def require_capacity_for(self, project_id: int, current_members: int) -> None:
+        project = await self.require_open_project(project_id)
 
         if current_members >= project.max_collaborators:
             raise ProjectIsFull()

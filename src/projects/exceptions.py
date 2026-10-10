@@ -16,6 +16,11 @@ class ProjectAlreadyHasStatus(DomainError):
     detail = "The project has already been canceled."
 
 
+class ProjectIsCanceled(DomainError):
+    status_code = 409
+    detail = "The project is canceled."
+
+
 class ProjectIsFull(DomainError):
     status_code = 409
     detail = "The project is currently full."

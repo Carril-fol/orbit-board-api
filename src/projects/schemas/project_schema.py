@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -140,6 +141,8 @@ class ProjectDetail(BaseModel):
     max_collaborators: int = Field(..., description="The maximum number of collaborators allowed.", examples=[10])
     visibility: str = Field(..., description="Whether the project is listed on the open board.", examples=["PUBLIC"])
     owner_id: int = Field(..., description="The ID of the project owner.", examples=[1])
+    created_at: datetime = Field(..., description="When the project was created.")
+    updated_at: datetime = Field(..., description="When the project was last updated.")
 
     model_config = ConfigDict(from_attributes=True)
 
