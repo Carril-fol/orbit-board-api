@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.database.base_repository import BaseRepository
 
-from ..models.task_user_model import TaskUser
+from ..models.task_user_model import TaskUser, TaskUserStatus
 
 
 class TaskUserRepository(BaseRepository[TaskUser]):
@@ -19,6 +21,10 @@ class TaskUserRepository(BaseRepository[TaskUser]):
         result = await self.db.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:
+            if existing.status != TaskUserStatus.ASSIGNED:
+                existing.status = TaskUserStatus.ASSIGNED
+                existing.updated_at = datetime.now(timezone.utc)
+                await self.update(existing)
             return existing
 
         assignment = TaskUser(task_id=task_id, user_id=user_id)

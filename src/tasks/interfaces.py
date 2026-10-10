@@ -37,14 +37,12 @@ class ITaskService(ABC):
         self,
         user_id: int,
         project_id: int,
+        limit: int,
+        offset: int,
         status: str = None,
         priority: str = None,
         filter_user_id: int = None
     ) -> ListDetailTaskOutputSchema:
-        pass
-
-    @abstractmethod
-    async def get_tasks_from_user(self, user_id: int, project_id: int) -> ListDetailTaskOutputSchema:
         pass
 
 

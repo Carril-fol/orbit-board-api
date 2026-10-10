@@ -26,6 +26,11 @@ class TaskCannotCompleted(DomainError):
     detail = "Cannot complete task while subtasks are still open"
 
 
+class TaskInvalidParent(DomainError):
+    status_code = 400
+    detail = "Subtasks are one level deep: the parent must be another top-level task, and a task with subtasks cannot become one"
+
+
 class TaskUserNotFound(DomainError):
     status_code = 404
     detail = "This register not exists"

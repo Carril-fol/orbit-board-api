@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
+from shared.pagination import PageParams
+
 from ..models.task_model import TaskPriority, TaskStatus
 
 
@@ -86,9 +88,21 @@ class DetailTaskOutputSchema(BaseModel):
 
 class ListDetailTaskOutputSchema(BaseModel):
     """
-    Schema for returning a list of tasks with their full details.
+    Schema for returning a paginated list of tasks with their full details.
     """
     tasks: list[DetailTaskOutputSchema] = Field(..., description="A list of tasks with their full details")
+    total: int = Field(..., description="Total number of tasks found.", examples=[50])
+    limit: int = Field(..., description="Maximum number of tasks returned.", examples=[20])
+    offset: int = Field(..., description="Number of tasks skipped.", examples=[0])
+
+
+class TaskFiltersSchema(PageParams):
+    """
+    Query parameters for listing the tasks of a project.
+    """
+    status: Optional[TaskStatus] = Field(None, description="Only tasks with this status.")
+    priority: Optional[TaskPriority] = Field(None, description="Only tasks with this priority.")
+    user_id: Optional[int] = Field(None, description="Only tasks assigned to this user.")
 
 
 class TaskOutputSchema(BaseModel):

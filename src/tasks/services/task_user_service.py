@@ -41,7 +41,7 @@ class TaskUserService(ITaskUserService):
 
     async def _get_task_or_raise(self, task_id: int) -> Task:
         task = await self.task_repo.get_by_id(task_id)
-        if not task:
+        if not task or task.deleted_at is not None:
             raise TaskUserNotFound()
         return task
 
@@ -58,6 +58,7 @@ class TaskUserService(ITaskUserService):
             actor_user_id,
             task.project_id,
         )
+        await self.project_authorization_service.require_open_project(task.project_id)
 
         target_collaborator = await self.collaborator_service.get_collaborator_by_user_id_and_project_id(
             target_user_id,

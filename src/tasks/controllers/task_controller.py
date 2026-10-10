@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request
 
 from core.security.jwt_manager import CurrentUserId
 from shared.extensions import limiter
@@ -10,6 +12,7 @@ from ..schemas.task_schemas import (
     RegisterTaskInputSchema,
     DetailTaskOutputSchema,
     ListDetailTaskOutputSchema,
+    TaskFiltersSchema,
     UpdateTaskInputSchema,
     TaskOutputSchema,
 )
@@ -63,17 +66,17 @@ async def get_tasks(
     current_user_id: CurrentUserId,
     request: Request,
     project_id: int,
-    status: str = None,
-    priority: str = None,
-    user_id: int = None,
+    filters: Annotated[TaskFiltersSchema, Query()],
     service: ITaskService = Depends(get_task_service),
 ):
     tasks = await service.get_tasks_by_project(
         current_user_id,
         project_id,
-        status,
-        priority,
-        filter_user_id=user_id
+        filters.limit,
+        filters.offset,
+        filters.status,
+        filters.priority,
+        filter_user_id=filters.user_id
     )
     return tasks
 

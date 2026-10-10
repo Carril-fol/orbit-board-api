@@ -17,7 +17,8 @@ from ..schemas.task_schemas import (
 from ..exceptions import (
     TaskNotFound,
     TaskUserHasNotPermission,
-    TaskCannotCompleted
+    TaskCannotCompleted,
+    TaskInvalidParent,
 )
 
 
@@ -35,28 +36,27 @@ class TaskService(ITaskService):
         self.audit_log_service = audit_log_service
         self.project_authorization_service = project_authorization_service
 
-    def _format_tasks(self, tasks):
-        tasks_formatted = [
-            DetailTaskOutputSchema.model_validate(task)
-            for task in tasks
-        ]
-        return ListDetailTaskOutputSchema(tasks=tasks_formatted)
-
     async def get_task_or_raise(self, task_id: int) -> Task:
         task = await self.repo.get_by_id(task_id)
         if not task or task.deleted_at != None:
             raise TaskNotFound()
         return task
 
+    async def _validate_parent(self, parent_id: int, project_id: int, task_id: int | None = None) -> None:
+        parent = await self.get_task_or_raise(parent_id)
+        if parent.project_id != project_id:
+            raise TaskUserHasNotPermission()
+        if parent.parent_id is not None or parent.id == task_id:
+            raise TaskInvalidParent()
+        if task_id is not None and await self.repo.get_subtasks(task_id):
+            raise TaskInvalidParent()
+
     async def create(self, data: RegisterTaskInputSchema, user_id: int, project_id: int):
         await self.collaborator_service.require_project_member(user_id, project_id)
+        await self.project_authorization_service.require_open_project(project_id)
 
         if data.parent_id:
-            parent_task = await self.repo.get_by_id(data.parent_id)
-            if not parent_task:
-                raise TaskNotFound()
-            if parent_task.project_id != project_id:
-                raise TaskUserHasNotPermission()
+            await self._validate_parent(data.parent_id, project_id)
 
         task_data = data.model_dump()
         task_data["project_id"] = project_id
@@ -69,7 +69,8 @@ class TaskService(ITaskService):
     async def delete_task(self, task_id: int, user_id: int):
         task = await self.get_task_or_raise(task_id)
         await self.project_authorization_service.require_project_owner(user_id, task.project_id)
-        
+        await self.project_authorization_service.require_open_project(task.project_id)
+
         task.deleted_at = datetime.now(timezone.utc)
 
         await self.repo.update(task)
@@ -85,8 +86,18 @@ class TaskService(ITaskService):
 
     async def update_task(self, task_id: int, data: UpdateTaskInputSchema, user_id: int):
         task = await self.get_task_or_raise(task_id)
-        await self.project_authorization_service.require_project_owner(user_id, task.project_id)
-        
+        project = await self.project_authorization_service.get_project(task.project_id)
+        fields = data.model_dump(exclude_unset=True)
+
+        if project.owner_id != user_id:
+            if fields.keys() - {"status"} or not await self.repo.is_assigned(task_id, user_id):
+                raise TaskUserHasNotPermission()
+
+        await self.project_authorization_service.require_open_project(task.project_id)
+
+        if data.parent_id is not None:
+            await self._validate_parent(data.parent_id, task.project_id, task_id)
+
         old_state = task.to_dict()
 
         if data.status == "DONE":
@@ -94,7 +105,7 @@ class TaskService(ITaskService):
             if open_subtasks > 0:
                 raise TaskCannotCompleted()
 
-        for key, value in data.model_dump(exclude_unset=True).items():
+        for key, value in fields.items():
             setattr(task, key, value)
             
         new_state = task.to_dict()
@@ -119,24 +130,28 @@ class TaskService(ITaskService):
         return DetailTaskOutputSchema.model_validate(task)
 
     async def get_tasks_by_project(
-        self, 
-        user_id: int, 
-        project_id: int, 
-        status: str = None, 
-        priority: str = None, 
+        self,
+        user_id: int,
+        project_id: int,
+        limit: int,
+        offset: int,
+        status: str = None,
+        priority: str = None,
         filter_user_id: int = None
     ) -> ListDetailTaskOutputSchema:
         await self.collaborator_service.require_project_member(user_id, project_id)
 
-        tasks_raw = await self.repo.get_tasks_by_project(
+        tasks, total = await self.repo.get_tasks_by_project(
             project_id=project_id,
+            limit=limit,
+            offset=offset,
             status=status,
             priority=priority,
             filter_user_id=filter_user_id
         )
-        tasks_formated = self._format_tasks(tasks_raw)
-        return tasks_formated
-
-    async def get_tasks_from_user(self, user_id: int, project_id: int):
-        tasks = await self.repo.get_tasks_from_project_from_user(user_id, project_id)
-        return self._format_tasks(tasks)
+        return ListDetailTaskOutputSchema(
+            tasks=[DetailTaskOutputSchema.model_validate(task) for task in tasks],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
