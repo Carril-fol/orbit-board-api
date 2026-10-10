@@ -8,7 +8,7 @@ class UserResponse(BaseModel):
     id: int = Field(..., description="Unique identifier of the user.", examples=[1])
     first_name: str = Field(..., description="User's first name.", examples=["John"])
     last_name: str = Field(..., description="User's last name.", examples=["Doe"])
-    username: str = Field(..., description="Unique username of the user.", examples=["johndoe123"])
+    username: str | None = Field(None, description="Unique username of the user.", examples=["johndoe123"])
     email: str = Field(..., description="User's email address.", examples=["john.doe@example.com"])
     
     model_config = ConfigDict(from_attributes=True)

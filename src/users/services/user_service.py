@@ -30,3 +30,6 @@ class UserService(IUserService):
     async def get_user_by_email(self, email: str) -> User:
         user = await self.user_repo.get_user_by_email(email)
         return user
+
+    async def get_user_by_username(self, username: str) -> User | None:
+        return await self.user_repo.get_user_by_username(username)

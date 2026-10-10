@@ -11,6 +11,10 @@ class IUserService(ABC):
         pass
     
     @abstractmethod
+    async def get_user_by_username(self, username: str) -> User | None:
+        pass
+
+    @abstractmethod
     async def create_user(self, data: UserCreateSchema):
         pass
 
