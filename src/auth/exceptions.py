@@ -14,3 +14,8 @@ class InvalidTokenExceptions(DomainError):
 class AuthUserAlreadyExistWithThatEmail(DomainError):
     status_code = 409
     detail = "An User already has this email"
+
+
+class AuthUserAlreadyExistWithThatUsername(DomainError):
+    status_code = 409
+    detail = "An User already has this username"

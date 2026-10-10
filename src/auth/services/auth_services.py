@@ -9,7 +9,8 @@ from users.interfaces import IUserService
 from ..exceptions import (
     InvalidCredentialsException,
     InvalidTokenExceptions,
-    AuthUserAlreadyExistWithThatEmail
+    AuthUserAlreadyExistWithThatEmail,
+    AuthUserAlreadyExistWithThatUsername,
 )
 from ..repositories.revoked_token_repository import RevokedTokenRepository
 from ..schemas.auth_schema import (
@@ -34,6 +35,8 @@ class AuthService(IAuthService):
     async def register_user(self, data: RegisterInputSchema):
         if await self.user_service.get_user_by_email(data.email):
             raise AuthUserAlreadyExistWithThatEmail()
+        if await self.user_service.get_user_by_username(data.username):
+            raise AuthUserAlreadyExistWithThatUsername()
 
         hashed_password = await self.password_manager.hash(data.password)
         return await self.user_service.create_user(data, hashed_password)
@@ -53,7 +56,6 @@ class AuthService(IAuthService):
         return await self.revoked_token_repo.revoke(payload["jti"], expires_at)
 
     async def rotate_refresh_token(self, payload: dict) -> None:
-        # A refresh token is single use: a revoked one means logout or replay.
         if not await self._revoke(payload):
             raise InvalidTokenExceptions()
 
@@ -64,5 +66,5 @@ class AuthService(IAuthService):
             try:
                 payload = JwtManager.validate_token(token, token_type)
             except HTTPException:
-                continue  # expired or forged: it can't be used anyway
+                continue 
             await self._revoke(payload)
