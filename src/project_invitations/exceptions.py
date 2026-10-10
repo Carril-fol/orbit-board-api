@@ -16,6 +16,11 @@ class ProjectInvitationPermissionError(DomainError):
     detail = "You do not have permission to respond to this invitation."
 
 
+class ProjectInvitationExpired(DomainError):
+    status_code = 410
+    detail = "The invitation has expired."
+
+
 class ProjectInvitationAlreadyResponded(DomainError):
     status_code = 400
     detail = "The invitation is not valid; it has already been responded to."

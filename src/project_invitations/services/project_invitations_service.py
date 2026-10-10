@@ -1,4 +1,7 @@
+from datetime import datetime, timedelta, timezone
 from secrets import token_urlsafe
+
+from shared.config.settings import settings
 
 from collaborators.interfaces import ICollaboratorService
 from projects.interfaces import IProjectAuthorizationService
@@ -13,7 +16,8 @@ from ..exceptions import (
     ProjectInvitationPermissionError,
     ProjectInvitationAlreadyExistsError,
     ProjectInvitationNotFoundError,
-    ProjectInvitationAlreadyResponded
+    ProjectInvitationAlreadyResponded,
+    ProjectInvitationExpired,
 )
 from ..models.project_invitation_model import InvitationStatus, ProjectInvitation
 from ..repositories.project_invitation_repository import ProjectInvitationRepository
@@ -140,6 +144,9 @@ class ProjectInvitationService(IProjectInvitationService):
 
         if invite.status != InvitationStatus.PENDING:
             raise ProjectInvitationAlreadyResponded()
+
+        if invite.created_at + timedelta(seconds=settings.invitation_expires) <= datetime.now(timezone.utc):
+            raise ProjectInvitationExpired()
 
         old_state = self._auditable_state(invite)
 

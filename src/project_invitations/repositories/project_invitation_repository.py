@@ -1,8 +1,16 @@
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from shared.config.settings import settings
 from shared.database.base_repository import BaseRepository
 from ..models.project_invitation_model import InvitationStatus, ProjectInvitation
+
+
+def _not_expired():
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=settings.invitation_expires)
+    return ProjectInvitation.created_at > cutoff
 
 
 class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
@@ -14,6 +22,7 @@ class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
             ProjectInvitation.id_project == project_id,
             ProjectInvitation.id_invitee == invitee_id,
             ProjectInvitation.status == InvitationStatus.PENDING,
+            _not_expired(),
         )
         result = await self.db.execute(stmt)
         return result.scalars().first()
@@ -29,6 +38,7 @@ class ProjectInvitationRepository(BaseRepository[ProjectInvitation]):
             .where(
                 ProjectInvitation.id_invitee == invitee_id,
                 ProjectInvitation.status == InvitationStatus.PENDING,
+                _not_expired(),
             )
             .order_by(ProjectInvitation.id.desc())
         )
