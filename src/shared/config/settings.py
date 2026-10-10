@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     jwt_access_token_expires: int = 1800
     jwt_refresh_token_expires: int = 2592000
 
+    invitation_expires: int = 604800
+    request_retry_cooldown: int = 604800
+
     jwt_cookie_httponly: bool = True
     jwt_cookie_secure: bool = True
     jwt_cookie_samesite: str = "lax"
