@@ -78,7 +78,7 @@ async def test_leave_project_unassigns_tasks(
         f"{URL_PROJECT_PREFIX}/{project_created.id}/tasks",
         json={"title": "Task tests", "description": "Task description", "status": "TO DO", "priority": "MEDIUM"},
     )
-    task = (await TaskRepository(db_session).get_tasks_by_project(project_created.id))[0]
+    task = (await TaskRepository(db_session).get_tasks_by_project(project_created.id))[0][0]
     await authenticated_client.post(f"/tasks/api/v1/{task.id}/users", json={"user_id": second_user.id})
 
     await second_client.delete(f"{URL_PROJECT_PREFIX}/{project_created.id}/collaborators/me")

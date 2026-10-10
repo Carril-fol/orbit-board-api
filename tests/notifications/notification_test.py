@@ -44,7 +44,7 @@ async def task_created(authenticated_client, project_created, db_session):
         f"/projects/api/v1/{project_created.id}/tasks",
         json={"title": "Task tests", "description": "Task description", "status": "TO DO", "priority": "MEDIUM"},
     )
-    tasks = await TaskRepository(db_session).get_tasks_by_project(project_created.id)
+    tasks, _ = await TaskRepository(db_session).get_tasks_by_project(project_created.id)
     return tasks[0]
 
 

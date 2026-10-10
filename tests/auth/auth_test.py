@@ -24,7 +24,13 @@ async def test_register_user_with_existing_email(client: AsyncClient):
 
     response = await client.post(f"{URL_PREFIX}/register", json=DATA)
     assert response.status_code == 409
-    
+
+async def test_register_user_with_existing_username(client: AsyncClient):
+    await client.post(f"{URL_PREFIX}/register", json=DATA)
+
+    response = await client.post(f"{URL_PREFIX}/register", json={**DATA, "email": "other@example.com"})
+    assert response.status_code == 409
+
 async def test_login(client: AsyncClient):
     await client.post(f"{URL_PREFIX}/register", json=DATA)
 

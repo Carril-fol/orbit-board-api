@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from project_invitations.models.project_invitation_model import InvitationStatus
+from shared.config.settings import settings
 
 URL_PREFIX = "/invitations/api/v1"
 
@@ -149,4 +152,37 @@ async def test_request_after_rejected_invitation(second_client, invitation_creat
         f"/projects/api/v1/{invitation_created.id_project}/requests",
         json={"message": "Test message", "role": "MEMBER"},
     )
+    assert response.status_code == 201
+
+
+async def _expire(invitation, invitations_repo):
+    invitation.created_at -= timedelta(seconds=settings.invitation_expires)
+    await invitations_repo.update(invitation)
+
+
+async def test_accept_expired_invitation(second_client, invitation_created, invitations_repo, collaborators_repo):
+    await _expire(invitation_created, invitations_repo)
+
+    response = await second_client.post(f"{URL_PREFIX}/{invitation_created.token}/accept")
+    assert response.status_code == 410
+
+    collaborator = await collaborators_repo.get_collaborator_by_user_id_and_project_id(
+        invitation_created.id_invitee,
+        invitation_created.id_project,
+    )
+    assert collaborator is None
+
+
+async def test_expired_invitation_not_received(second_client, invitation_created, invitations_repo):
+    await _expire(invitation_created, invitations_repo)
+
+    response = await second_client.get(f"{URL_PREFIX}/received")
+    assert response.status_code == 200
+    assert response.json()["invitations"] == []
+
+
+async def test_reinvite_after_expiry(authenticated_client, invitation_data, invitation_created, invitations_repo):
+    await _expire(invitation_created, invitations_repo)
+
+    response = await authenticated_client.post(f"{URL_PREFIX}/", json=invitation_data)
     assert response.status_code == 201

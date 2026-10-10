@@ -36,3 +36,9 @@ async def test_get_my_projects(project_created, authenticated_client):
 async def test_get_all_projects(project_created, authenticated_client):
     response_get_my_projects = await authenticated_client.get(f"{URL_PREFIX}/")
     assert response_get_my_projects.status_code == 200
+
+async def test_project_detail_has_timestamps(project_created, authenticated_client):
+    response = await authenticated_client.get(f"{URL_PREFIX}/{project_created.id}")
+    assert response.status_code == 200
+    assert response.json()["created_at"] is not None
+    assert response.json()["updated_at"] is not None

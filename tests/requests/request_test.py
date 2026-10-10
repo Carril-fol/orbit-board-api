@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from requests.schemas.requests_schemas import RequestStatus
+from shared.config.settings import settings
 
 URL_REQUEST_PREFIX = "/requests/api/v1"
 URL_PROJECT_PREFIX = "/projects/api/v1"
@@ -80,3 +83,54 @@ async def test_decline_request(authenticated_client, request_created, requests_r
 async def test_approve_request_as_non_owner(second_client, request_created):
     response = await second_client.post(f"{URL_REQUEST_PREFIX}/{request_created.id}/approve")
     assert response.status_code == 403
+
+async def test_request_again_too_soon_after_decline(authenticated_client, second_client, request_created, request_data):
+    await authenticated_client.post(f"{URL_REQUEST_PREFIX}/{request_created.id}/decline")
+
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{request_created.project_id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 429
+
+
+async def test_request_again_after_leaving(authenticated_client, second_client, request_created, request_data):
+    await authenticated_client.post(f"{URL_REQUEST_PREFIX}/{request_created.id}/approve")
+    await second_client.delete(f"{URL_PROJECT_PREFIX}/{request_created.project_id}/collaborators/me")
+
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{request_created.project_id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 201
+
+
+async def test_request_again_after_decline(
+    authenticated_client, second_client, request_created, request_data, requests_repo
+):
+    await authenticated_client.post(f"{URL_REQUEST_PREFIX}/{request_created.id}/decline")
+    request = await requests_repo.get_request_by_id(request_created.id)
+    request.review_at -= timedelta(seconds=settings.request_retry_cooldown)
+    await requests_repo.update(request)
+
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{request_created.project_id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 201
+
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{request_created.project_id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 409
+
+
+async def test_create_request_on_canceled_project(authenticated_client, second_client, project_created, request_data):
+    await authenticated_client.delete(f"{URL_PROJECT_PREFIX}/{project_created.id}")
+
+    response = await second_client.post(
+        f"{URL_PROJECT_PREFIX}/{project_created.id}/requests",
+        json=request_data,
+    )
+    assert response.status_code == 409
