@@ -26,6 +26,11 @@ class RequestCollaboratorAlreadyExists(DomainError):
     detail = "User already is a collaborator"
 
 
+class RequestRetryTooSoon(DomainError):
+    status_code = 429
+    detail = "Your last request was declined recently, try again later"
+
+
 class RequestUserAlreadyIsInvited(DomainError):
     status_code = 409
     detail = "User is already invited to this project"

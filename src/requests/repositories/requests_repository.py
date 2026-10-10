@@ -31,9 +31,14 @@ class RequestsRepository(BaseRepository[Request]):
     async def get_request_by_user_id_and_project_id(
         self, user_id: int, project_id: int
     ) -> Request | None:
-        stmt = select(Request).where(
-            Request.user_id == user_id,
-            Request.project_id == project_id
+        stmt = (
+            select(Request)
+            .where(
+                Request.user_id == user_id,
+                Request.project_id == project_id
+            )
+            .order_by(Request.id.desc())
+            .limit(1)
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()

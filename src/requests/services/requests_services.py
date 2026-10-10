@@ -1,4 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+from shared.config.settings import settings
 
 from collaborators.interfaces import ICollaboratorService
 from project_invitations.interfaces import IProjectInvitationService
@@ -23,6 +25,7 @@ from ..exceptions import (
     RequestAlreadyRespondedError,
     RequestNotFound,
     RequestProjectNotFoundError,
+    RequestRetryTooSoon,
     RequestUserAlreadyIsInvited
 )
 from ..interfaces import IRequestsService
@@ -49,8 +52,14 @@ class RequestsService(IRequestsService):
 
     async def _validate_if_exists(self, user_id: int, project_id: int) -> None:
         request = await self.requests_repository.get_request_by_user_id_and_project_id(user_id, project_id)
-        if request and request.status in (RequestStatus.PENDING, RequestStatus.APPROVED):
+        if not request:
+            return
+        if request.status == RequestStatus.PENDING:
             raise RequestAlreadyExists()
+        if request.status == RequestStatus.REJECTED:
+            retry_at = request.review_at + timedelta(seconds=settings.request_retry_cooldown)
+            if retry_at > datetime.now(timezone.utc):
+                raise RequestRetryTooSoon()
 
     async def create_request(
         self,
@@ -61,6 +70,7 @@ class RequestsService(IRequestsService):
         project = await self.project_service.get_project_by_id(project_id)
         if project.visibility != ProjectVisibility.PUBLIC:
             raise RequestProjectNotFoundError()
+        await self.project_authorization_service.require_open_project(project.id)
 
         await self._validate_if_exists(user_id, project_id)
 
