@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import jwt_required, CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT
 from shared.pagination import Pagination
 
 from ..dependencies import get_audit_log_service
@@ -20,7 +20,7 @@ router = APIRouter(
     response_model=ListAuditLogOutputSchema,
     status_code=200
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_project_audit_logs(
     user_id: CurrentUserId,
     request: Request,
