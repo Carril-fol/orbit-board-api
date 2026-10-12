@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import jwt_required, CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 
 from ..interfaces import IProjectInvitationService
 from ..dependencies import get_project_invitation_service
@@ -25,7 +25,7 @@ router = APIRouter(
     response_model=CreateInvitationOutput,
     status_code=201,
 )
-@limiter.limit("20/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create_invitation(
     inviter_id: CurrentUserId,
     request: Request,
@@ -47,7 +47,7 @@ async def create_invitation(
     status_code=200,
     summary="Invitations waiting for the authenticated user",
 )
-@limiter.limit("20/minute")
+@limiter.limit(READ_LIMIT)
 async def get_received_invitations(
     user_id: CurrentUserId,
     request: Request,
@@ -59,8 +59,10 @@ async def get_received_invitations(
 @router.delete(
     "/{invitation_id}", response_model=ProjectInvitationOutput, status_code=200
 )
+@limiter.limit(WRITE_LIMIT)
 async def revoke_invitation(
     user_id: CurrentUserId,
+    request: Request,
     invitation_id: int,
     service: IProjectInvitationService = Depends(get_project_invitation_service),
 ):
@@ -69,7 +71,7 @@ async def revoke_invitation(
 
 
 @router.post("/{token}/accept", response_model=ProjectInvitationOutput, status_code=200)
-@limiter.limit("20/minute")
+@limiter.limit(WRITE_LIMIT)
 async def accept_invitation(
     user_id: CurrentUserId,
     request: Request,
@@ -82,7 +84,7 @@ async def accept_invitation(
 
 
 @router.post("/{token}/reject", response_model=ProjectInvitationOutput, status_code=200)
-@limiter.limit("20/minute")
+@limiter.limit(WRITE_LIMIT)
 async def reject_invitation(
     user_id: CurrentUserId,
     request: Request,
