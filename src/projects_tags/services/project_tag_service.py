@@ -3,7 +3,7 @@ from audit_logs.interfaces import IAuditLogService
 
 from ..models.project_tag_model import ProjectTag
 from ..repositories.project_tag_repository import ProjectTagRepository
-from ..exceptions import ProjectTagNotFound
+from ..exceptions import ProjectTagAlreadyExists, ProjectTagNotFound
 from ..schemas.project_tag_schema import CreateProjectTag, RegisterProjectTagInputSchema
 from ..interfaces import IProjectTagService
 
@@ -30,6 +30,9 @@ class ProjectTagService(IProjectTagService):
         await self.project_authorization_service.require_project_owner(user_id, id_project)
 
         project_tag_data = CreateProjectTag(tag=data.tag, id_project=id_project)
+        if await self.repo.get_project_tag(id_project, project_tag_data.tag):
+            raise ProjectTagAlreadyExists()
+
         project_to_create = ProjectTag(**project_tag_data.model_dump())
         tag_created = await self.repo.create(project_to_create)
 

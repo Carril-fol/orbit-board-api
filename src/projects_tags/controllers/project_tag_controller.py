@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import jwt_required, CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, WRITE_LIMIT
 
 from ..dependencies import get_project_tag_service
 from ..schemas.project_tag_schema import (
@@ -27,7 +27,7 @@ project_tags_router = APIRouter(
     response_model=ProjectTagOutputSchema,
     status_code=201,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create_project_tag(
     user_id: CurrentUserId,
     request: Request,
@@ -44,7 +44,7 @@ async def create_project_tag(
     response_model=ProjectTagOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def delete_project_tag(
     user_id: CurrentUserId,
     request: Request,

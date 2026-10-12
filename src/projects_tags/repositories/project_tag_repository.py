@@ -13,3 +13,8 @@ class ProjectTagRepository(BaseRepository[ProjectTag]):
         stmt = select(ProjectTag).where(ProjectTag.id == id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_project_tag(self, id_project: int, tag: str) -> ProjectTag | None:
+        stmt = select(ProjectTag).where(ProjectTag.id_project == id_project, ProjectTag.tag == tag)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
