@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 from shared.pagination import Pagination
 
 from ..interfaces import ICommentService
@@ -23,7 +23,7 @@ task_comments_router = APIRouter(prefix="/tasks/api/v1", tags=["Comments"])
     response_model=CommentOutputSchema,
     status_code=201,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create_comment(
     user_id: CurrentUserId,
     request: Request,
@@ -40,7 +40,7 @@ async def create_comment(
     response_model=DetailCommentOutputSchema,
     status_code=200
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_comment(
     user_id: CurrentUserId,
     request: Request,
@@ -56,7 +56,7 @@ async def get_comment(
     response_model=ListDetailCommentOutputSchema,
     status_code=200
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_comment_from_tasks(
     user_id: CurrentUserId,
     request: Request,
@@ -73,7 +73,7 @@ async def get_comment_from_tasks(
     response_model=CommentOutputSchema,
     status_code=200
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def update_comment(
     user_id: CurrentUserId,
     request: Request,
@@ -90,7 +90,7 @@ async def update_comment(
     response_model=CommentOutputSchema,
     status_code=200
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def delete_comment(
     user_id: CurrentUserId,
     request: Request,
