@@ -17,9 +17,6 @@ Orbit Board is a project management API designed to eliminate friction in collab
 *   **Backend:** Python 3.13, FastAPI, Pydantic v2
 *   **Database:** PostgreSQL (Neon Serverless), SQLAlchemy 2.0 async, asyncpg
 *   **Migrations:** Alembic
-*   **Auth:** JWT in HttpOnly cookies, Argon2 password hashing (`pwdlib`)
-*   **Dependency Management:** [uv](https://github.com/astral-sh/uv)
-*   **Rate Limiting:** `slowapi`
 *   **Containerization:** Docker (multi-stage build)
 
 ## 🏗️ Architecture
