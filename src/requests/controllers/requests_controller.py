@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import jwt_required, CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 
 from ..interfaces import IRequestsService
 from ..dependencies import get_requests_service
@@ -30,7 +30,7 @@ project_requests_router = APIRouter(
     response_model=RequestOutputSchema,
     status_code=201,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create(
     user_id: CurrentUserId,
     request: Request,
@@ -47,7 +47,7 @@ async def create(
     response_model=RequestOutputSchema,
     status_code=201,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def approve(
     user_id: CurrentUserId,
     request: Request,
@@ -63,7 +63,7 @@ async def approve(
     response_model=RequestOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def decline(
     user_id: CurrentUserId,
     request: Request,
@@ -78,7 +78,7 @@ async def decline(
     response_model=ListDetailRequestSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_all(
     user_id: CurrentUserId,
     request: Request,
@@ -95,7 +95,7 @@ async def get_all(
     status_code=200,
     summary="Access requests submitted by the authenticated user",
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_sent(
     user_id: CurrentUserId,
     request: Request,
@@ -110,7 +110,7 @@ async def get_sent(
     response_model=DetailRequestSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_request(
     user_id: CurrentUserId,
     request: Request,
