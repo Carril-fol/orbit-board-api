@@ -6,3 +6,8 @@ class DomainError(Exception):
         if detail:
             self.detail = detail
         super().__init__(self.detail)
+
+
+class DatabaseUnavailable(DomainError):
+    status_code = 503
+    detail = "Database unavailable"

@@ -4,13 +4,15 @@ from uuid import uuid4
 from jwt import ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import APIKeyCookie
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.repositories.revoked_token_repository import RevokedTokenRepository
 from shared.config.settings import settings
 from shared.database import get_async_db
+
+from .exceptions import InvalidToken, TokenExpired, TokenNotFound, TokenRevoked
 
 
 class JwtManager:
@@ -42,22 +44,22 @@ class JwtManager:
             return payload
 
         except ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Token expired")
+            raise TokenExpired()
 
-        except InvalidTokenError as e:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        except InvalidTokenError:
+            raise InvalidToken()
 
     @classmethod
     def validate_token(cls, token: str, type_wanted: str) -> dict:
         payload = cls.decode_token(token)
 
         if payload.get("type") != type_wanted:
-            raise HTTPException(status_code=401, detail=f"Invalid {type_wanted} token")
+            raise InvalidToken(f"Invalid {type_wanted} token")
 
         try:
             payload["sub"] = int(payload["sub"])
         except (KeyError, TypeError, ValueError):
-            raise HTTPException(status_code=401, detail="Invalid token subject")
+            raise InvalidToken("Invalid token subject")
 
         return payload
 
@@ -110,13 +112,13 @@ refresh_token_cookie = APIKeyCookie(
 
 def get_access_token_from_cookie(token: str = Depends(access_token_cookie)) -> str:
     if not token:
-        raise HTTPException(status_code=401, detail="Access token not found")
+        raise TokenNotFound("Access token not found")
     return token
 
 
 def get_refresh_token_from_cookie(token: str = Depends(refresh_token_cookie)) -> str:
     if not token:
-        raise HTTPException(status_code=401, detail="Refresh token not found")
+        raise TokenNotFound("Refresh token not found")
     return token
 
 
@@ -126,7 +128,7 @@ async def jwt_required(
 ):
     payload = JwtManager.validate_token(token, "access_token")
     if await RevokedTokenRepository(db).is_revoked(payload["jti"]):
-        raise HTTPException(status_code=401, detail="Token revoked")
+        raise TokenRevoked()
     return payload
 
 

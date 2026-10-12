@@ -27,8 +27,10 @@ from tasks.controllers.task_user_controller import router as tasks_user_router
 from users.controllers.user_controller import router as users_router
 from audit_logs.controllers.audit_log_controller import router as audit_logs_router
 from notifications.controllers.notification_controller import router as notifications_router
+from core.controllers.health_controller import router as health_router
 
 def register_routers(app: FastAPI) -> None:
+    app.include_router(health_router)
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(project_router)
