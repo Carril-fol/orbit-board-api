@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
+from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +15,6 @@ class RevokedTokenRepository:
     async def revoke(self, jti: str, expires_at: datetime) -> bool:
         # Check and revoke in one statement, so two concurrent refreshes with the
         # same token cannot both pass. False means it was already revoked.
-        # ponytail: rows are never purged; delete where expires_at < now() if the table grows.
         stmt = (
             insert(RevokedToken)
             .values(jti=jti, expires_at=expires_at)
@@ -26,3 +26,8 @@ class RevokedTokenRepository:
 
     async def is_revoked(self, jti: str) -> bool:
         return await self.db.get(RevokedToken, jti) is not None
+
+    async def purge_expired(self) -> None:
+        await self.db.execute(
+            delete(RevokedToken).where(RevokedToken.expires_at < datetime.now(timezone.utc))
+        )

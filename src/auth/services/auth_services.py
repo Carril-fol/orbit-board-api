@@ -1,14 +1,12 @@
 from datetime import datetime, timezone
 
-from fastapi import HTTPException
-
+from core.security.exceptions import AuthenticationError, InvalidToken
 from core.security.jwt_manager import JwtManager
 from core.security.password_manager import PasswordManager
 from users.interfaces import IUserService
 
 from ..exceptions import (
     InvalidCredentialsException,
-    InvalidTokenExceptions,
     AuthUserAlreadyExistWithThatEmail,
     AuthUserAlreadyExistWithThatUsername,
 )
@@ -57,14 +55,15 @@ class AuthService(IAuthService):
 
     async def rotate_refresh_token(self, payload: dict) -> None:
         if not await self._revoke(payload):
-            raise InvalidTokenExceptions()
+            raise InvalidToken()
 
     async def logout(self, access_token: str | None, refresh_token: str | None) -> None:
+        await self.revoked_token_repo.purge_expired()
         for token, token_type in ((access_token, "access_token"), (refresh_token, "refresh_token")):
             if not token:
                 continue
             try:
                 payload = JwtManager.validate_token(token, token_type)
-            except HTTPException:
+            except AuthenticationError:
                 continue 
             await self._revoke(payload)

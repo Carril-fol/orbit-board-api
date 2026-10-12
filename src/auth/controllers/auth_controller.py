@@ -8,7 +8,7 @@ from core.security.jwt_manager import (
     set_auth_cookies,
     clear_auth_cookies,
 )
-from shared.extensions import limiter
+from shared.extensions import limiter, AUTH_LIMIT, WRITE_LIMIT
 
 from ..dependencies import get_auth_service
 from ..schemas.auth_schema import (
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/auth/api/v1", tags=["Auth"])
     response_model=AuthOutputSchema,
     status_code=201,
 )
-@limiter.limit("5/minute")
+@limiter.limit(AUTH_LIMIT)
 async def register(
     request: Request,
     data: RegisterInputSchema,
@@ -41,7 +41,7 @@ async def register(
     response_model=AuthOutputSchema,
     status_code=200,
 )
-@limiter.limit("5/minute")
+@limiter.limit(AUTH_LIMIT)
 async def login(
     request: Request,
     data: LoginInputSchema,
@@ -63,7 +63,9 @@ async def login(
     response_model=AuthOutputSchema, 
     status_code=200
 )
+@limiter.limit(WRITE_LIMIT)
 async def logout(
+    request: Request,
     response: Response,
     access_token: str | None = Depends(access_token_cookie),
     refresh_token: str | None = Depends(refresh_token_cookie),
@@ -79,7 +81,9 @@ async def logout(
     response_model=AuthOutputSchema,
     status_code=200,
 )
+@limiter.limit(WRITE_LIMIT)
 async def refresh(
+    request: Request,
     response: Response,
     _payload: dict = Depends(jwt_refresh_required),
     service: IAuthService = Depends(get_auth_service),
