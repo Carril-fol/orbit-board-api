@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import jwt_required, CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 from shared.pagination import Pagination
 
 from ..dependencies import get_project_service
@@ -26,7 +26,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=RegisterProjectOutputSchema, status_code=201)
-@limiter.limit("5/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create_project(
     user_id: CurrentUserId,
     request: Request,
@@ -38,7 +38,7 @@ async def create_project(
 
 
 @router.get("/", response_model=ListProjectDetail, status_code=200)
-@limiter.limit("5/minute")
+@limiter.limit(READ_LIMIT)
 async def get_all_project(
     request: Request,
     page: Pagination,
@@ -48,7 +48,7 @@ async def get_all_project(
 
 
 @router.get("/me", response_model=ListProjectDetail, status_code=200)
-@limiter.limit("5/minute")
+@limiter.limit(READ_LIMIT)
 async def get_my_projects(
     user_id: CurrentUserId,
     request: Request,
@@ -59,7 +59,7 @@ async def get_my_projects(
 
 
 @router.get("/{project_id}", response_model=ProjectDetail, status_code=200)
-@limiter.limit("5/minute")
+@limiter.limit(READ_LIMIT)
 async def get_project(
     user_id: CurrentUserId,
     request: Request,
@@ -70,7 +70,7 @@ async def get_project(
 
 
 @router.patch("/{project_id}", response_model=UpdateProjectOutputSchema, status_code=200)
-@limiter.limit("5/minute")
+@limiter.limit(WRITE_LIMIT)
 async def update_project(
     user_id: CurrentUserId,
     request: Request,
@@ -83,7 +83,7 @@ async def update_project(
 
 
 @router.delete("/{project_id}", response_model=DeleteProjectOutputSchema, status_code=200)
-@limiter.limit("5/minute")
+@limiter.limit(WRITE_LIMIT)
 async def delete_project(
     user_id: CurrentUserId,
     request: Request,
