@@ -54,10 +54,6 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
-@app.get("/health", tags=["Health"], summary="Liveness probe")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
-
 if __name__ == "__main__":
     run(
         app,
