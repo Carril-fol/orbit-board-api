@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 
 from ..dependencies import get_collaborators_service
 from ..schemas.collaborators_schema import (
@@ -20,7 +20,7 @@ project_collaborators_router = APIRouter(prefix="/projects/api/v1", tags=["Colla
     response_model=ListDetailCollaboratorsSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_collaborators(
     user_id: CurrentUserId,
     request: Request,
@@ -35,7 +35,7 @@ async def get_collaborators(
     response_model=CollaboratorsOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def leave_project(
     user_id: CurrentUserId,
     request: Request,
@@ -51,7 +51,7 @@ async def leave_project(
     response_model=CollaboratorsOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def remove_collaborator(
     user_id: CurrentUserId,
     request: Request,
@@ -68,7 +68,7 @@ async def remove_collaborator(
     response_model=CollaboratorsOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def change_role_collaborator(
     user_id: CurrentUserId,
     request: Request,
