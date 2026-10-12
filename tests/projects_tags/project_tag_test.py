@@ -12,3 +12,17 @@ async def test_delete_project_tag(authenticated_client, project_tag_created, pro
     response = await authenticated_client.delete(f"{TAGS_URL_PREFIX}/{project_tag_created.id}")
     assert response.status_code == 200
     assert await project_tag_repo.get_project_tag_by_id(project_tag_created.id) is None
+
+async def test_create_duplicated_project_tag(authenticated_client, project_tag_created, tag_data):
+    response = await authenticated_client.post(
+        f"{PROJECTS_URL_PREFIX}/{project_tag_created.id_project}/tags",
+        json=tag_data,
+    )
+    assert response.status_code == 409
+
+async def test_create_duplicated_project_tag_ignores_case(authenticated_client, project_tag_created, tag_data):
+    response = await authenticated_client.post(
+        f"{PROJECTS_URL_PREFIX}/{project_tag_created.id_project}/tags",
+        json={"tag": tag_data["tag"].lower()},
+    )
+    assert response.status_code == 409
