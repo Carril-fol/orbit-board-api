@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 from shared.pagination import Pagination
 
 from ..interfaces import INotificationService
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/notifications/api/v1", tags=["Notifications"])
     response_model=ListNotificationOutputSchema,
     status_code=200,
 )
-@limiter.limit("30/minute")
+@limiter.limit(READ_LIMIT)
 async def get_notifications(
     user_id: CurrentUserId,
     request: Request,
@@ -34,7 +34,7 @@ async def get_notifications(
     response_model=NotificationMessageSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def mark_all_notifications_as_read(
     user_id: CurrentUserId,
     request: Request,
@@ -49,7 +49,7 @@ async def mark_all_notifications_as_read(
     response_model=NotificationMessageSchema,
     status_code=200,
 )
-@limiter.limit("30/minute")
+@limiter.limit(WRITE_LIMIT)
 async def mark_notification_as_read(
     user_id: CurrentUserId,
     request: Request,
