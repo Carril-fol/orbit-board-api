@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, WRITE_LIMIT
 
 from ..dependencies import get_task_user_service
 from ..interfaces import ITaskUserService
@@ -19,7 +19,7 @@ router = APIRouter(
     response_model=TaskOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def assign_user_to_task(
     actor_user_id: CurrentUserId,
     request: Request,
@@ -40,7 +40,7 @@ async def assign_user_to_task(
     response_model=TaskOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def unassign_user_from_task(
     actor_user_id: CurrentUserId,
     request: Request,

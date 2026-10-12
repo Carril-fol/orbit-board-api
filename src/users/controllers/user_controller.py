@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT
 
 from ..dependencies import get_user_service
 from ..interfaces import IUserService
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/users/api/v1", tags=["Users"])
     status_code=200,
     summary="Profile of the authenticated user",
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_authenticated_user(
     user_id: CurrentUserId,
     request: Request,

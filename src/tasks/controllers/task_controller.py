@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request
 
 from core.security.jwt_manager import CurrentUserId
-from shared.extensions import limiter
+from shared.extensions import limiter, READ_LIMIT, WRITE_LIMIT
 
 from ..dependencies import get_task_service
 from ..interfaces import ITaskService
@@ -28,7 +28,7 @@ project_tasks_router = APIRouter(prefix="/projects/api/v1", tags=["Tasks"])
     summary="Create a new task",
     description="Create a new task v"
 )
-@limiter.limit("10/minute")
+@limiter.limit(WRITE_LIMIT)
 async def create_task(
     user_id: CurrentUserId,
     request: Request,
@@ -45,7 +45,7 @@ async def create_task(
     response_model=DetailTaskOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_task(
     user_id: CurrentUserId,
     request: Request,
@@ -61,7 +61,7 @@ async def get_task(
     response_model=ListDetailTaskOutputSchema,
     status_code=200,
 )
-@limiter.limit("10/minute")
+@limiter.limit(READ_LIMIT)
 async def get_tasks(
     current_user_id: CurrentUserId,
     request: Request,
@@ -86,6 +86,7 @@ async def get_tasks(
     response_model=TaskOutputSchema,
     status_code=200,
 )
+@limiter.limit(WRITE_LIMIT)
 async def delete_task(
     user_id: CurrentUserId,
     request: Request,
@@ -101,6 +102,7 @@ async def delete_task(
     response_model=TaskOutputSchema,
     status_code=200,
 )
+@limiter.limit(WRITE_LIMIT)
 async def update_task(
     user_id: CurrentUserId,
     request: Request,
