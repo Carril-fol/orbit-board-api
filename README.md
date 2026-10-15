@@ -1,6 +1,27 @@
 # Orbit Board API
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-API_Docs-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://orbit-board-api.onrender.com/docs)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Carril-fol/orbit-board-api)
+
 Orbit Board is a project management API designed to eliminate friction in collaboration. Users create projects, grow a team through invitations or join requests, and organise the work as hierarchical tasks with assignees and comments.
+
+## 🌐 Try it live
+
+The API is deployed on Render, with an interactive Swagger UI where you can test every endpoint from the browser:
+
+**👉 [orbit-board-api.onrender.com/docs](https://orbit-board-api.onrender.com/docs)**
+
+> [!NOTE]
+> The demo runs on a free instance that goes to sleep after a period of inactivity. The first request can take a few seconds to wake it up — after that it responds normally.
+
+**Quick walkthrough:**
+
+1. Open [`/docs`](https://orbit-board-api.onrender.com/docs).
+2. Create an account with `POST /auth/api/v1/register`.
+3. Log in with `POST /auth/api/v1/login` — the session is kept in a cookie.
+4. Create a project with `POST /projects/api/v1/`, then add tasks, invite collaborators or check the audit trail.
+
+Health check: [`/health`](https://orbit-board-api.onrender.com/health)
 
 ## ✨ Features
 
@@ -18,6 +39,7 @@ Orbit Board is a project management API designed to eliminate friction in collab
 *   **Database:** PostgreSQL (Neon Serverless), SQLAlchemy 2.0 async, asyncpg
 *   **Migrations:** Alembic
 *   **Containerization:** Docker (multi-stage build)
+*   **Deployment:** Render
 
 ## 🏗️ Architecture
 
@@ -88,7 +110,7 @@ Follow this steps to configure the project locally
 
 Start the server:
 ```bash
-   py main.py
+py main.py
 ```
 The application will be available at http://localhost:8000. You can access the interactive API documentation at `/docs`.
 
@@ -98,6 +120,18 @@ The application will be available at http://localhost:8000. You can access the i
 docker build -t orbit-board-api .
 docker run --env-file .env -p 8000:8000 orbit-board-api
 ```
+
+### Deploy to Render
+
+The repository includes a [`render.yaml`](render.yaml) blueprint, so you can deploy your own copy in a few clicks:
+
+1. Click the **Deploy to Render** button at the top of this README.
+2. Fill in the values Render asks for: `DATABASE_URL` (a PostgreSQL connection string, e.g. from [Neon](https://neon.tech)) and `CORS_ORIGINS`. `SECRET_KEY` is generated automatically.
+3. Once the service is up, apply the migrations against your database:
+   ```bash
+   DATABASE_URL="postgresql+asyncpg://user:pass@host/db" uv run alembic upgrade head
+   ```
+4. Open `https://<your-service>.onrender.com/docs`.
 
 ### Migrations
 
@@ -139,6 +173,8 @@ Reading a project depends on its `visibility`. A `PUBLIC` project is listed on t
 
 ### Example flow
 
+Run it locally against `localhost:8000`, or replace that with `https://orbit-board-api.onrender.com` to use the live demo.
+
 ```bash
 # 1. Register, then log in — the session cookie is stored in cookies.txt
 curl -X POST localhost:8000/auth/api/v1/register \
@@ -152,10 +188,14 @@ curl -X POST localhost:8000/auth/api/v1/login -c cookies.txt \
   -d '{"email":"ada@example.com","password":"a-strong-password"}'
 
 # 2. Create a project
-curl -X POST localhost:8000/projects/api/v1/ -b cookies.txt   -H "Content-Type: application/json"   -d '{"name":"Orbit","description":"Ship the thing","status":"ACTIVE","max_collaborators":5,"visibility":"PUBLIC"}'
+curl -X POST localhost:8000/projects/api/v1/ -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Orbit","description":"Ship the thing","status":"ACTIVE","max_collaborators":5,"visibility":"PUBLIC"}'
 
 # 3. Add a task to it
-curl -X POST localhost:8000/projects/api/v1/1/tasks -b cookies.txt   -H "Content-Type: application/json"   -d '{"title":"Design the schema","status":"TO DO","priority":"HIGH"}'
+curl -X POST localhost:8000/projects/api/v1/1/tasks -b cookies.txt \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Design the schema","status":"TO DO","priority":"HIGH"}'
 
 # 4. Read the project's tasks, with their subtasks and progress
 curl localhost:8000/projects/api/v1/1/tasks -b cookies.txt
@@ -163,4 +203,3 @@ curl localhost:8000/projects/api/v1/1/tasks -b cookies.txt
 # 5. See everything that happened in the project
 curl localhost:8000/projects/api/v1/1/audit-logs -b cookies.txt
 ```
-
